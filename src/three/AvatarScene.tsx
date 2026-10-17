@@ -35,8 +35,8 @@ const LOOK = { yaw: 0.58, up: 0.3, down: 0.1 }
     上臂往**外**抬、略朝下，前臂再往上翻——手落在肩膀外侧、下巴高度。
     两点约束是量过的：头很大（半径约 0.2、中心 x≈0.08），手要避开它就得靠"往外"
     而不是"往上"；同时上臂转得越小，腋下那几个顶点被拉出的丝越轻。 */
-const WAVE_UPPER = new THREE.Vector3(0.55, -0.72, 0.42).normalize()
-const WAVE_FORE = new THREE.Vector3(0.62, 0.62, 0.3).normalize()
+const WAVE_UPPER = new THREE.Vector3(0.75, -0.55, 0.3).normalize()
+const WAVE_FORE = new THREE.Vector3(0.35, 0.9, 0.25).normalize()
 /** 前臂左右摆的幅度（弧度）和频率 */
 const WAVE_SWING = 0.36
 const WAVE_FREQ = 8.5
@@ -75,7 +75,10 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, on
 
   return (
     <Canvas
-      camera={{ position: [0, 0, CAMERA_Z], fov: 34 }}
+      // near/far 必须贴着实际场景收紧：模型高 1.147、相机在 z=2.16，最近处约 1.5、最远处约 2.8。
+      // 用 three.js 默认的 0.1/1000 会把深度精度浪费掉近两个数量级，
+      // 夹克内层与卫衣外层几乎共面时就出现锯齿状 z-fighting（表现为"破洞/碎裂面"）。
+      camera={{ position: [0, 0, CAMERA_Z], fov: 34, near: 1.2, far: 6 }}
       dpr={[1, 1.75]}
       gl={{ antialias: true, alpha: true, powerPreference: 'low-power' }}
       frameloop={reducedMotion ? 'demand' : 'always'}

@@ -105,7 +105,7 @@ async function call(action, region, params) {
 }
 
 function parseArgs(argv) {
-  const opts = { region: 'ap-guangzhou', model: '3.0', generateType: null, views: [], outdir: null }
+  const opts = { region: 'ap-guangzhou', model: '3.0', generateType: null, views: [], outdir: null, json: null, jsonFile: null }
   const positional = []
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
@@ -114,6 +114,8 @@ function parseArgs(argv) {
     else if (a === '--generate-type') opts.generateType = argv[++i]
     else if (a === '--lowpoly') opts.generateType = 'LowPoly'
     else if (a === '--outdir') opts.outdir = argv[++i]
+    else if (a === '--json') opts.json = argv[++i]
+    else if (a === '--json-file') opts.jsonFile = argv[++i]
     else if (a === '--views') {
       opts.views = argv[++i].split(',').map((s) => {
         const [view, path] = s.split('=')
@@ -122,6 +124,21 @@ function parseArgs(argv) {
     } else positional.push(a)
   }
   return { opts, positional }
+}
+
+/** 通用调用：Action 名 + 任意 JSON 参数，用来跑降面 / 绑骨等本工具没封装的动作 */
+async function cmdCall([action], opts) {
+  if (!action) throw new Error('用法：call <Action> --json-file params.json')
+  let params = {}
+  if (opts.jsonFile) {
+    // PowerShell 的 Set-Content -Encoding utf8 会带 BOM，JSON.parse 吃不下
+    let raw = await readFile(opts.jsonFile, 'utf8')
+    if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1)
+    params = JSON.parse(raw)
+  } else if (opts.json) params = JSON.parse(opts.json)
+  const r = await call(action, opts.region, params)
+  console.log(JSON.stringify(r, null, 2))
+  return r
 }
 
 async function toB64(path) {
@@ -215,13 +232,15 @@ async function main() {
   if (cmd === 'submit') return void (await cmdSubmit(positional, opts))
   if (cmd === 'query') return void (await cmdQuery(positional, opts))
   if (cmd === 'wait') return void (await cmdWait(positional, opts))
+  if (cmd === 'call') return void (await cmdCall(positional, opts))
 
   console.log(`未知命令：${cmd ?? '(空)'}
 
 用法：
   node tools/hunyuan3d.mjs submit <图片> [--views front=a.jpg,back=b.jpg] [--model 3.0] [--lowpoly] [--region ap-guangzhou]
   node tools/hunyuan3d.mjs query <JobId>
-  node tools/hunyuan3d.mjs wait  <JobId> [--outdir .tmp-tools/hunyuan]`)
+  node tools/hunyuan3d.mjs wait  <JobId> [--outdir .tmp-tools/hunyuan]
+  node tools/hunyuan3d.mjs call  <Action> --json-file params.json`)
   process.exitCode = 1
 }
 

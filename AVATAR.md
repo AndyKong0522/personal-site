@@ -465,6 +465,75 @@ npx gltf-transform optimize in.glb out.glb --compress quantize \
 
 细丝只在人物**右臂**（画面左侧）出现，左臂干净——同一套参数，唯一差异是网格本身。
 
+## 十七、第二版模型（2026-10-17）
+
+为了根治 v1 的两个问题（挥手腋下拉丝、头前探）重做了一版。
+
+### 关键发现：张开站姿解决了腋下拉丝
+
+v2 的参考图要求**双臂张开 35–40°、腋下能透出背景**。结果挥手时
+**腋下拉丝彻底消失**（v1 试了 7 种代码办法都消不掉）。
+证明那确实是「AI 按贴身手臂猜的腋下拓扑太差」，从参考图下手才是正解。
+
+### 后脑勺秃 → 多视角输入
+
+v1 后脑勺是秃的，因为只喂一张正面图，背面全靠模型猜。
+`SubmitHunyuanTo3DProJob` 支持 `MultiViewImages`，补一张背面图就钉住了。
+
+参数坑（记牢）：
+
+| 错误 | 正确做法 |
+|---|---|
+| `LowPoly is not recognized` | 标准 API 用 `GenerateType`，不是布尔 `LowPoly` |
+| `MultiViewImages.0.ImageBase64` 不认 | 字段名是 **`ViewImageBase64`** |
+| — | `ViewType` 只认 `back`/`left`/`right`，**没有 `front`**（正面走主图 `ImageBase64`） |
+| — | 多视角**只在 `Model: '3.1'`** 生效，且 3.1 不支持 LowPoly |
+
+**多视角额外扣 10 积分**：一次 3.1 多视角生成 = 20+10 = **30 积分**，100 分只够 3 次。
+
+### 完整链路（URL 串起来，无需上传）
+
+```bash
+# 1) 生3D（3.1 + 背面图）
+node tools/hunyuan3d.mjs submit refs/avatar-v2/prepped/front-open-1.jpg \
+  --model 3.1 --views back=refs/avatar-v2/prepped/back-1.jpg
+node tools/hunyuan3d.mjs wait <JobId> --outdir .tmp-tools/hunyuan
+
+# 2) 绑骨（TokenHub 后付费，不耗 3D 积分）
+node tools/tokenhub3d.mjs submit hy-3d-rigging --url "<生3D的GLB地址>" --motion-type 26
+node tools/tokenhub3d.mjs wait   hy-3d-rigging <id> --outdir .tmp-tools/rigged
+
+# 3) FBX → GLB
+node tools/tokenhub3d.mjs submit hy-3d-format --field file --url "<FBX地址>" --format GLB
+node tools/tokenhub3d.mjs wait   hy-3d-format <id> --outdir .tmp-tools/rigged
+
+# 4) 降面 + 压贴图 + 压几何
+npx gltf-transform optimize in.glb out.glb --compress quantize \
+  --texture-compress webp --texture-size 1024 --simplify true --simplify-error 0.0002
+npx gltf-transform meshopt out.glb final.glb --level high
+```
+
+### 降面参数要盯住面数，不能看文件大小
+
+| simplify-error | 面数 | 体积 | 判断 |
+|---|---|---|---|
+| 0.001 | 35,492 | 1.34 MB | **太狠**，脸和手会糊 |
+| 0.0002 | 136,865 | 4.74 MB → meshopt 1.38 MB | ✓ 和 v1 的 13.5 万面持平 |
+
+### 走错的路：`SubmitReduceFaceJob` 出来是白模
+
+想用「智能拓扑」降面，结果输出 **12,559 面、无材质无贴图**的纯几何白模
+（`POSITION` 是唯一属性）。要贴图还得再跑一次「纹理生成」。
+所以降面放在本地做（`gltf-transform optimize`），贴图和蒙皮一起保留。
+
+### v2 仍然存在的瑕疵
+
+- **夹克表面有层叠/阶梯状的小面片**：原始 50 万面模型上就有
+  （数值诊断：零退化面、仅 99/50 万法线反向），是生成器把外套做成多层壳互相穿插。
+  1× 尺寸下只是细小斑点，放大才明显。
+- **眼睛动不了**：这套骨骼 28 根全是标准人形骨，**没有眼球骨**，
+  眼睛是画在脸部贴图上的，无法用骨骼驱动。v1 试过眨眼，效果差已放弃。
+
 ## 十六、加载太慢：几何占了 89%
 
 线上首屏人物要好几秒才出来。量了一下 GLB 的构成：
