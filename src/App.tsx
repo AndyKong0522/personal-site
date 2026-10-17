@@ -33,15 +33,27 @@ export default function App() {
     localStorage.setItem('lang', lang)
   }, [lang])
 
-  // 首屏渲染完、浏览器空闲时再决定是否加载 3D。
+  // 首屏渲染完就尽快加载 3D。原来 timeout 给到 1500ms，页面忙时会白等一秒多；
+  // 模型已经从 4.55 MB 压到 1.26 MB，早点发请求能明显缩短它出现的时间。
   useEffect(() => {
     if (!canRender3D()) return
-    const start = () => setUse3D(true)
+    const start = () => {
+      // 让模型和 3D 代码包**并行**下载：不这样做的话，要等代码包下载 + 执行完，
+      // AvatarScene 组件挂载后才会发模型请求，白白多等两三秒。
+      // 用 preload 而不是 prefetch：这个请求马上就会真的用到。
+      const link = document.createElement('link')
+      link.rel = 'preload'
+      link.as = 'fetch'
+      link.href = '/models/avatar.glb'
+      link.crossOrigin = 'anonymous'
+      document.head.appendChild(link)
+      setUse3D(true)
+    }
     if ('requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(start, { timeout: 1500 })
+      const id = window.requestIdleCallback(start, { timeout: 400 })
       return () => window.cancelIdleCallback(id)
     }
-    const id = setTimeout(start, 300)
+    const id = setTimeout(start, 200)
     return () => clearTimeout(id)
   }, [])
 
