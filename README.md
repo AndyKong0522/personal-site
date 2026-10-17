@@ -19,7 +19,8 @@
 | 滚动动效 | GSAP ScrollTrigger + Lenis | 尊重 `prefers-reduced-motion` |
 | 部署 | Cloudflare Pages | |
 
-运行时**不请求任何外部服务**：字体自托管，没有 CDN、没有分析脚本、没有第三方请求。
+字体自托管，没有外链 CDN；运行时唯一的外部请求是 Cloudflare 自家的 Web Analytics beacon
+（无 Cookie、不采集个人数据，由 Pages 自动注入）。
 
 ## 本地运行
 
