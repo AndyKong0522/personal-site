@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+
+# 构建/工具缓存
+.npm-cache/
+.tmp-tools/
+*.tsbuildinfo
+
+# 内部工作笔记：含手机号、成本、事实核对清单，不入公开仓库
+STATUS.md
+AGENTS.md
+CLAUDE.md
+
+# 本地核对截图与参考图，不入库
+shots/
+refs/
+
+# 本人照片（隐私，绝不入库、不部署）
+photos/

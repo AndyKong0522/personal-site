@@ -1,0 +1,32 @@
+# Cloudflare Pages 响应头
+# 语法：先写匹配路径，再缩进写头部
+
+# Vite 产出的文件名自带内容哈希，可以永久缓存
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 字体文件名不带哈希，用较长缓存 + 后台重新验证
+/fonts/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
+
+# 3D 模型文件名不带哈希（avatar.glb），换模型后最长 1 天生效；
+# 用 stale-while-revalidate 让回访者立刻拿到旧缓存、后台再更新
+/models/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# 其余：安全头
+# 站点运行时完全不请求外部服务（字体自托管、无 CDN、无分析脚本），所以 CSP 可以收得很紧。
+#
+# 两处必须放宽，都是实测出来的（放宽前模型会渲染成纯灰）：
+#   connect-src 要带 blob: —— glTF 的内嵌贴图会被 GLTFLoader 转成 blob: URL 再 fetch，
+#                              只写 'self' 会把它拦掉，"Couldn't load texture"
+#   script-src 要带 'wasm-unsafe-eval' —— three-stdlib 的 GLTFLoader 会初始化 Meshopt 解码器，
+#                              它用 WebAssembly。我们的模型没走 Meshopt/Draco/KTX2 压缩，
+#                              所以不支持该关键字的旧浏览器里只会少一条解码能力，不影响渲染
+# style-src 需要 'unsafe-inline'：React 和 GSAP 会写内联 style 属性。
+/*
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; font-src 'self'; connect-src 'self' blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" role="img" aria-label="Avatar placeholder">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b3aca0"/>
+      <stop offset="1" stop-color="#8a8377"/>
+    </linearGradient>
+    <linearGradient id="h" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c8c1b5"/>
+      <stop offset="1" stop-color="#a49d91"/>
+    </linearGradient>
+  </defs>
+  <!-- 头 -->
+  <circle cx="150" cy="126" r="66" fill="url(#h)"/>
+  <!-- 身体，底部被画框裁掉（与参考图一致） -->
+  <path d="M150 196c52 0 96 46 96 108v96H54v-96c0-62 44-108 96-108z" fill="url(#g)"/>
+</svg>
