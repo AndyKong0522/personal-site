@@ -27,18 +27,23 @@ const CAMERA_Z = 2.16
 /** 绑定姿势的 Neck→Head 骨段前倾 22.8°（用 tools 量过），所以头默认是低着的。
     这里把这个倾角补掉，让头立起来。0.42 rad ≈ 24°，比"水平"再高一点点。 */
 const HEAD_LIFT = 0.42
-/** 头跟随光标：左右幅度；往上看的幅度；往下看的幅度（故意很小，光标在下方文字区时也不低头）。 */
-const LOOK = { yaw: 0.4, up: 0.24, down: 0.04 }
+/** 头跟随光标：左右幅度；往上看的幅度；往下看的幅度（往下的幅度小一些，
+    光标停在下方文字区时不会显得在瞪地）。 */
+const LOOK = { yaw: 0.58, up: 0.3, down: 0.1 }
 
 /** 挥手时上臂、前臂在模型空间里要指向的方向（人物左臂；右臂把 x 取反）。
-    上臂朝外上方抬，前臂竖直——手举在肩膀**外侧**，不能停在脸前面，否则会和脸穿模。
-    也不能太往外：这套蒙皮腋下权重不够，张太开会把网格拉出丝。 */
-const WAVE_UPPER = new THREE.Vector3(0.82, -0.12, 0.4).normalize()
-const WAVE_FORE = new THREE.Vector3(0.34, 1, 0.06).normalize()
-/** 前臂左右摆的幅度（弧度）和频率。幅度太大时手会摆到脸那边去 */
-const WAVE_SWING = 0.32
+    上臂往**外**抬、略朝下，前臂再往上翻——手落在肩膀外侧、下巴高度。
+    两点约束是量过的：头很大（半径约 0.2、中心 x≈0.08），手要避开它就得靠"往外"
+    而不是"往上"；同时上臂转得越小，腋下那几个顶点被拉出的丝越轻。 */
+const WAVE_UPPER = new THREE.Vector3(0.55, -0.72, 0.42).normalize()
+const WAVE_FORE = new THREE.Vector3(0.4, 0.92, 0.4).normalize()
+/** 前臂左右摆的幅度（弧度）和频率 */
+const WAVE_SWING = 0.36
 const WAVE_FREQ = 8.5
 const WAVE_DUR = 2.4
+/** 肩骨分担多少抬臂。剩下的才由大臂承担——分得多，腋下每个顶点要拉伸的量就少，
+    网格就不容易被拉出薄网（实测 0.25 时很明显）。 */
+const SHOULDER_SHARE = 0.5
 
 /** 脖子分担多少俯仰。调大会把头整体往后挪（头骨位置跟着脖子转），
     但头的朝向由 HEAD_LIFT 单独决定，不会跟着后仰。实测从 0.4 调到 0.62，
@@ -525,7 +530,7 @@ function poseArm(o: {
   const idleQ = new THREE.Quaternion().setFromAxisAngle(AZ, o.idle)
 
   // 肩骨分担一部分抬升，减轻腋下网格被拉扯
-  if (o.shoulder) drive(o.shoulder, o.rest, o.dShoulder.copy(body).multiply(_qb.copy(ID).slerp(full, 0.25 * o.w)))
+  if (o.shoulder) drive(o.shoulder, o.rest, o.dShoulder.copy(body).multiply(_qb.copy(ID).slerp(full, SHOULDER_SHARE * o.w)))
   drive(o.arm, o.rest, o.dArm.copy(body).multiply(_qb.copy(ID).slerp(full, o.w)).multiply(idleQ))
 
   // 前臂：上臂转完后它的指向 → 竖直向上，再绕"朝镜头"的轴左右摆
