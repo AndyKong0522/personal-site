@@ -7,6 +7,7 @@
  *
  * 用法：
  *   node tools/ai3d.mjs submit <图片路径> [--normal|--lowpoly|--geometry] [--facecount N] [--pbr]
+ *   node tools/ai3d.mjs submit <正面图> --views front=正面.png,back=背面.png   # 多视角
  *   node tools/ai3d.mjs query <JobId>
  *   node tools/ai3d.mjs wait  <JobId> [--outdir public/models]
  *
@@ -52,7 +53,7 @@ async function call(path, body, key) {
 }
 
 function parseArgs(argv) {
-  const opts = { generateType: 'Normal', faceCount: null, pbr: false, outdir: null }
+  const opts = { generateType: 'Normal', faceCount: null, pbr: false, outdir: null, views: [] }
   const positional = []
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
@@ -62,7 +63,13 @@ function parseArgs(argv) {
     else if (a === '--pbr') opts.pbr = true
     else if (a === '--facecount') opts.faceCount = Number(argv[++i])
     else if (a === '--outdir') opts.outdir = argv[++i]
-    else positional.push(a)
+    else if (a === '--views') {
+      // 形如 --views front=正面.png,back=背面.png
+      opts.views = argv[++i].split(',').map((s) => {
+        const [view, path] = s.split('=')
+        return { view: view.trim(), path: path.trim() }
+      })
+    } else positional.push(a)
   }
   return { opts, positional }
 }
@@ -82,6 +89,21 @@ async function cmdSubmit([imgPath], opts, key) {
   if (opts.generateType !== 'Normal') body.GenerateType = opts.generateType
   if (opts.faceCount) body.FaceCount = opts.faceCount
   if (opts.pbr) body.EnablePBR = true
+
+  // 多视角（正/左/右/后/左前45°/右前45°）。单张正面图时背面是模型猜的，
+  // 上一版就把后脑勺猜秃了；补一张背面图能把这部分钉住。
+  if (opts.views.length) {
+    const list = []
+    for (const v of opts.views) {
+      const e = extname(v.path).toLowerCase()
+      if (!MIME[e]) throw new Error(`多视角图 ${v.path} 格式不支持（${e}）`)
+      const b = await readFile(v.path)
+      if (b.toString('base64').length > 6 * 1024 * 1024) throw new Error(`${v.path} base64 后超过 6 MB`)
+      list.push({ ViewType: v.view, ImageBase64: `data:${MIME[e]};base64,${b.toString('base64')}` })
+    }
+    body.MultiViewImages = list
+    console.log(`多视角：${list.map((x) => x.ViewType).join(', ')}`)
+  }
 
   const r = await call('/submit', body, key)
   console.log(`JobId：${r.JobId}`)
@@ -170,6 +192,7 @@ async function main() {
 
 用法：
   node tools/ai3d.mjs submit <图片路径> [--lowpoly] [--facecount N] [--pbr]
+  node tools/ai3d.mjs submit <正面图> --views front=a.png,back=b.png   # 多视角
   node tools/ai3d.mjs query <JobId>
   node tools/ai3d.mjs wait  <JobId> [--outdir public/models]`)
   process.exitCode = 1
