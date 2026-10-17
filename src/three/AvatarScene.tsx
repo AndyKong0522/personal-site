@@ -35,8 +35,8 @@ const LOOK = { yaw: 0.58, up: 0.3, down: 0.1 }
     上臂往**外**抬、略朝下，前臂再往上翻——手落在肩膀外侧、下巴高度。
     两点约束是量过的：头很大（半径约 0.2、中心 x≈0.08），手要避开它就得靠"往外"
     而不是"往上"；同时上臂转得越小，腋下那几个顶点被拉出的丝越轻。 */
-const WAVE_UPPER = new THREE.Vector3(0.75, -0.55, 0.3).normalize()
-const WAVE_FORE = new THREE.Vector3(0.35, 0.9, 0.25).normalize()
+const WAVE_UPPER = new THREE.Vector3(0.45, -0.82, 0.34).normalize()
+const WAVE_FORE = new THREE.Vector3(0.3, 0.95, 0.2).normalize()
 /** 前臂左右摆的幅度（弧度）和频率 */
 const WAVE_SWING = 0.36
 const WAVE_FREQ = 8.5
