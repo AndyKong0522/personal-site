@@ -20,7 +20,7 @@ const MODEL = {
 }
 
 /** 归一化后的统一高度。相机距离按这个高度调，换模型不用重新调。 */
-const AVATAR_HEIGHT = 1.147
+const AVATAR_HEIGHT = 1.24
 /** 可见高度 = 2·z·tan(fov/2) = 1.32，上下各留约 7% 余量，鞋底不会被画布下沿切掉。 */
 const CAMERA_Z = 2.16
 

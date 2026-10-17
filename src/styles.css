@@ -611,7 +611,7 @@ a {
   .hero-stage {
     position: relative;
     inset: auto;
-    height: 46svh;
+    height: 54svh;
   }
   .avatar-canvas {
     width: min(72vw, 380px);

@@ -32,15 +32,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const sha256hex = (s) => createHash('sha256').update(s, 'utf8').digest('hex')
 const hmac = (key, msg) => createHmac('sha256', key).update(msg, 'utf8').digest()
 
+/** 密钥文件路径，可用 --env 指定（比如切到另一个账号时用 .env.account2）。
+ *  这样密钥可以只存在于磁盘上，不必贴进对话或日志。 */
+let ENV_FILE = '.env'
+
 async function loadKeys() {
-  const env = await readFile('.env', 'utf8')
+  const env = await readFile(ENV_FILE, 'utf8').catch(() => {
+    throw new Error(`读不到 ${ENV_FILE}`)
+  })
   const pick = (name) => {
     const line = env.split(/\r?\n/).find((l) => l.startsWith(`${name}=`))
     return line ? line.slice(name.length + 1).trim() : ''
   }
   const id = pick('TENCENT_SECRET_ID')
   const key = pick('TENCENT_SECRET_KEY')
-  if (!id || !key) throw new Error('.env 里缺 TENCENT_SECRET_ID / TENCENT_SECRET_KEY')
+  if (!id || !key) throw new Error(`${ENV_FILE} 里缺 TENCENT_SECRET_ID / TENCENT_SECRET_KEY`)
   return { id, key }
 }
 
@@ -105,11 +111,12 @@ async function call(action, region, params) {
 }
 
 function parseArgs(argv) {
-  const opts = { region: 'ap-guangzhou', model: '3.0', generateType: null, views: [], outdir: null, json: null, jsonFile: null }
+  const opts = { region: 'ap-guangzhou', model: '3.0', generateType: null, views: [], outdir: null, json: null, jsonFile: null, envFile: null }
   const positional = []
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--region') opts.region = argv[++i]
+    else if (a === '--env') opts.envFile = argv[++i]
     else if (a === '--model') opts.model = argv[++i]
     else if (a === '--generate-type') opts.generateType = argv[++i]
     else if (a === '--lowpoly') opts.generateType = 'LowPoly'
@@ -229,6 +236,7 @@ async function cmdWait([jobId], opts) {
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2)
   const { opts, positional } = parseArgs(rest)
+  if (opts.envFile) ENV_FILE = opts.envFile
   if (cmd === 'submit') return void (await cmdSubmit(positional, opts))
   if (cmd === 'query') return void (await cmdQuery(positional, opts))
   if (cmd === 'wait') return void (await cmdWait(positional, opts))
