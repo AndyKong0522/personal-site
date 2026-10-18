@@ -16,7 +16,7 @@ import * as THREE from 'three'
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
 const MODEL = {
-  url: '/models/avatar.glb', // 灰连帽卫衣 + 卡其灯芯绒夹克 + 戴镜框，带 28 根骨骼（程序化驱动）
+  url: '/models/avatar.glb', // v3 设计图 → TRELLIS.2 → Blender 绑骨（tools/blender-rig.py），28 根骨骼，程序化驱动
 }
 
 /** 归一化后的统一高度。相机距离按这个高度调，换模型不用重新调。 */
@@ -24,9 +24,9 @@ const AVATAR_HEIGHT = 1.24
 /** 可见高度 = 2·z·tan(fov/2) = 1.32，上下各留约 7% 余量，鞋底不会被画布下沿切掉。 */
 const CAMERA_Z = 2.16
 
-/** 绑定姿势的 Neck→Head 骨段前倾 22.8°（用 tools 量过），所以头默认是低着的。
-    这里把这个倾角补掉，让头立起来。0.42 rad ≈ 24°，比"水平"再高一点点。 */
-const HEAD_LIFT = 0.42
+/** 待机时头抬起的角度。v3 的绑定姿势是低头的（需要 0.42 rad 补回来）；
+    现在的模型（TRELLIS 生成 + tools/blender-rig.py 绑骨）绑定时头是正的，只再抬一点点显得精神。 */
+const HEAD_LIFT = 0.06
 /** 头跟随光标：左右幅度；往上看的幅度；往下看的幅度（往下的幅度小一些，
     光标停在下方文字区时不会显得在瞪地）。 */
 const LOOK = { yaw: 0.58, up: 0.3, down: 0.1 }
