@@ -22,6 +22,7 @@
     "skin": 0.22,
     "eye": 0.0
   },
+  "thin": {"parts": [20, 26], "strength": 0.3, "iterations": 1},
   "categories": {
     "shoe":    {"rgb": [238, 236, 232], "parts": [7, 8],    "mat": "shoe"},
     "lace":    {"rgb": [226, 224, 220], "parts": [73],      "mat": "cloth"},
@@ -43,7 +44,7 @@
     "part": 4,
     "cheeks": [[-0.0677, 0.7177], [0.0677, 0.7177]],
     "mouth": [0.0, 0.6986, 0.032],
-    "smile": 3.2
+    "smile": 4.6
   },
   "override": {}
 }

@@ -112,6 +112,31 @@ me.vertices.foreach_get("normal", N)
 N = N.reshape(-1, 3)
 n = len(me.vertices)
 
+# ---------- thin the glasses frame ----------
+# 框是一个管状结构：一环邻域的平均点就在管的轴线上，所以一次 Laplacian 收缩就等于把截面往轴心收，
+# 镜片开口的位置不动。normal map 是旧几何烘的，但镜框是亮面黑塑料，那点误差看不出来。
+THIN = CFG.get("thin")
+if THIN:
+    sel = np.isin(PID, np.array(THIN["parts"], np.int32))
+    F0 = np.empty(len(me.polygons) * 3, np.int64)
+    me.polygons.foreach_get("vertices", F0)
+    F0 = F0.reshape(-1, 3)
+    for _ in range(int(THIN.get("iterations", 1))):
+        acc = np.zeros_like(P)
+        cnt = np.zeros(len(P))
+        for a_, b_ in ((0, 1), (1, 2), (2, 0)):
+            np.add.at(acc, F0[:, a_], P[F0[:, b_]])
+            np.add.at(cnt, F0[:, a_], 1)
+            np.add.at(acc, F0[:, b_], P[F0[:, a_]])
+            np.add.at(cnt, F0[:, b_], 1)
+        mean_nb = acc / np.maximum(cnt, 1)[:, None]
+        P[sel] += float(THIN["strength"]) * (mean_nb[sel] - P[sel])
+    me.vertices.foreach_set("co", P.astype(np.float32).ravel())
+    me.update()
+    me.vertices.foreach_get("co", P.ravel())
+    me.vertices.foreach_get("normal", N.ravel())
+    print(f"thinned glasses: {int(sel.sum())} verts, strength {THIN['strength']}")
+
 # ---------- colours ----------
 cats = CFG.get("categories", {})
 colors = {}
