@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import { content, DISPLAY_LINES, EMAIL, type Lang } from './content'
 import { canRender3D, prefersReducedMotion } from './capabilities'
+import { AVATAR_MODEL } from './models'
 import StatsOverlay from './StatsOverlay'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -48,7 +49,7 @@ export default function App() {
       link.rel = 'preload'
       link.as = 'fetch'
       // 先预载小样（几百 KB，决定"人什么时候出现"），全尺寸由场景挂载后再下
-      link.href = '/models/avatar-lite.glb'
+      link.href = AVATAR_MODEL.lite
       link.crossOrigin = 'anonymous'
       document.head.appendChild(link)
       setUse3D(true)

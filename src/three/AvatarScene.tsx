@@ -13,15 +13,16 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { applyAvatarShading } from './avatarShading'
+import { AVATAR_MODEL } from '../models'
 
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
 const MODEL = {
   // v1 设计图 → Tripo（白模）+ tools/tripo-vcol.py 顶点色/AO + tools/blender-rig.py 绑骨，28 根骨骼，程序化驱动
-  url: '/models/avatar.glb',
+  url: AVATAR_MODEL.full,
   // 同一条管线出的 4 万面小样：先连它把人物显示出来，全尺寸在后台接着下载，好了直接换。
   // 两个模型的骨骼、尺度、静止姿势完全一致（同一个绑骨脚本），所以替换时不会跳。
-  lite: '/models/avatar-lite.glb',
+  lite: AVATAR_MODEL.lite,
 }
 
 /** 归一化后的统一高度。相机距离按这个高度调，换模型不用重新调。 */

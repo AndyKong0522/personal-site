@@ -9,10 +9,9 @@
 /fonts/*
   Cache-Control: public, max-age=2592000, stale-while-revalidate=604800
 
-# 3D 模型文件名不带哈希（avatar.glb），换模型后最长 1 天生效；
-# 用 stale-while-revalidate 让回访者立刻拿到旧缓存、后台再更新
-/models/*
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+# 3D 模型现在走 Vite 的资源导入（src/assets/models → dist/assets/avatar-<hash>.glb），
+# 文件名带内容哈希，直接落在上面的 /assets/* immutable 规则里，换模型不会有人继续看旧文件。
+# 以前的 public/models/* 用 1 天缓存，换模型后回访者最长一天还在看旧的，所以搬走了。
 
 # 其余：安全头
 # 站点运行时完全不请求外部服务（字体自托管、无 CDN、无分析脚本），所以 CSP 可以收得很紧。
