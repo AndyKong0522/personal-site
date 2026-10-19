@@ -12,17 +12,32 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 // 不用 drei 的 <Environment preset>：它会从外部 CDN 下载 HDR，拖慢首屏。
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import { applyEyeShading } from './eyeShading'
 
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
 const MODEL = {
-  url: '/models/avatar.glb', // v3 设计图 → TRELLIS.2 → Blender 绑骨（tools/blender-rig.py），28 根骨骼，程序化驱动
+  url: '/models/avatar.glb', // v1 设计图 → Tripo（白模）+ tools/tripo-vcol.py 顶点色/AO + tools/blender-rig.py 绑骨，28 根骨骼，程序化驱动
 }
 
 /** 归一化后的统一高度。相机距离按这个高度调，换模型不用重新调。 */
 const AVATAR_HEIGHT = 1.24
 /** 可见高度 = 2·z·tan(fov/2) = 1.32，上下各留约 7% 余量，鞋底不会被画布下沿切掉。 */
 const CAMERA_Z = 2.16
+/** 渲染分辨率上限。2.0 在 4K / 高分屏上等于四倍像素量，人像本身不需要那么细；
+    帧率不够时 AdaptiveDpr 会再往下调。 */
+const MAX_DPR = 1.5
+/** 初始渲染分辨率：跟随屏幕，但不超过 MAX_DPR（4K 高分屏上 2.0 等于四倍像素量）。 */
+const initialDpr = () => Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1, MAX_DPR)
+
+/** 灯光强度：半球环境光（压得很低，主要靠环境立方图和主光塑形）、主光（右前上）、补光（左前）、轮廓光（后上） */
+const HEMI = 0.25
+const KEY = 2.05
+const FILL = 0.55
+const RIM = 0.7
+/** 环境立方图的强度（程序生成的摄影棚，见 StudioEnv） */
+const ENV = 0.42
+const KEY_POS: [number, number, number] = [2.5, 4, 5]
 
 /** 待机时头抬起的角度。v3 的绑定姿势是低头的（需要 0.42 rad 补回来）；
     现在的模型（TRELLIS 生成 + tools/blender-rig.py 绑骨）绑定时头是正的，只再抬一点点显得精神。 */
@@ -72,6 +87,10 @@ type Props = {
 
 export default function AvatarScene({ scrollProgress, pointer, reducedMotion, onReady }: Props) {
   const drag = useRef<DragState>({ x: 0, y: 0, active: false })
+  // 弱机器兜底：帧率实在上不来时关掉主光的自身阴影（阴影是整场景的第二遍绘制）
+  const [shadowsOn, setShadowsOn] = useState(true)
+  // 分辨率也用 state 驱动：命令式 setDpr 会被 Canvas 重新应用 dpr 属性盖回去，state 才稳
+  const [dpr, setDpr] = useState(initialDpr)
 
   return (
     <Canvas
@@ -79,23 +98,142 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, on
       // 用 three.js 默认的 0.1/1000 会把深度精度浪费掉近两个数量级，
       // 夹克内层与卫衣外层几乎共面时就出现锯齿状 z-fighting（表现为"破洞/碎裂面"）。
       camera={{ position: [0, 0, CAMERA_Z], fov: 34, near: 1.2, far: 6 }}
-      dpr={[1, 1.75]}
-      gl={{ antialias: true, alpha: true, powerPreference: 'low-power' }}
+      dpr={dpr}
+      // PCFSoft 每像素要做十几次阴影采样；PCF 只要 4 次，柔和的观感靠 normalBias 和烘焙 AO 补
+      shadows={{ type: THREE.PCFShadowMap }}
+      // low-power 会让浏览器优先挑省电显卡（笔记本上就是核显），这里要的是性能
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       frameloop={reducedMotion ? 'demand' : 'always'}
-      onCreated={() => onReady?.()}
+      onCreated={({ gl }) => {
+        // R3F 默认 ACES 会把肤色、夹克的中间调压灰压暗；Neutral 更忠实于贴图（贴图按 2D 设计图取色）
+        gl.toneMapping = THREE.NeutralToneMapping
+        onReady?.()
+      }}
       aria-hidden="true"
     >
-      {/* 浅色纸感页面上的打光：环境光偏亮，不投地面阴影（会像一块地板） */}
-      <hemisphereLight args={['#ffffff', '#cfc9bd', 1.05]} />
-      <directionalLight position={[3, 5, 4]} intensity={1.35} color="#fffaf0" />
-      <directionalLight position={[-4, 2, -3]} intensity={0.4} color="#b9c2cc" />
+      {/* 浅色纸感页面上的打光：主光偏右前上并投自身阴影（下巴、发际、腋下、夹克褶皱靠它出来），
+          环境立方图给眼镜/鞋一点反射，半球光只补一点天光。贴图里另有一层很轻的顶点 AO。 */}
+      <StudioEnv />
+      <hemisphereLight args={['#ffffff', '#efe9df', HEMI]} />
+      <directionalLight
+        position={KEY_POS}
+        intensity={KEY}
+        color="#fffdf8"
+        castShadow={shadowsOn}
+        shadow-mapSize={[512, 512]}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.08}
+        shadow-camera-left={-1.2}
+        shadow-camera-right={1.2}
+        shadow-camera-top={1.2}
+        shadow-camera-bottom={-1.2}
+        shadow-camera-near={0.5}
+        shadow-camera-far={12}
+      />
+      <directionalLight position={[-4, 1.5, 3]} intensity={FILL} color="#f4f6fa" />
+      <directionalLight position={[-1.5, 2.6, -3.5]} intensity={RIM} color="#ffffff" />
       <Suspense fallback={null}>
+        <AdaptiveDpr
+          reducedMotion={reducedMotion}
+          onDpr={setDpr}
+          onSlow={() => setShadowsOn(false)}
+        />
         <Rig scrollProgress={scrollProgress} reducedMotion={reducedMotion} drag={drag}>
           <GltfAvatar url={MODEL.url} reducedMotion={reducedMotion} pointer={pointer} drag={drag} />
         </Rig>
       </Suspense>
     </Canvas>
   )
+}
+
+/** 帧率兜底，分两档：
+    1. 头几秒量真实帧时间，吃不消就把渲染分辨率降一档（1.5 → 1.25 → 1.0）；
+    2. 降到 1.0 还是慢，就关掉主光阴影（整场景的第二遍绘制）。
+    分辨率走 state（onDpr → Canvas 的 dpr 属性），不用命令式 setDpr：后者会被 Canvas 重渲染时
+    重新应用 dpr 属性盖回去，实测降下去又被拽回上限。
+    宁可略糊、略平，也不要卡；测完就停手，不再来回抖。 */
+function AdaptiveDpr({
+  reducedMotion,
+  onDpr,
+  onSlow,
+}: {
+  reducedMotion: boolean
+  onDpr: (dpr: number) => void
+  onSlow: () => void
+}) {
+  const gl = useThree((s) => s.gl)
+  const st = useRef({ n: 0, sum: 0, done: false })
+
+  useFrame((_, delta) => {
+    const s = st.current
+    if (s.done || reducedMotion) return
+    s.n++
+    s.sum += delta
+    if (s.n < 40) return
+    const avg = s.sum / s.n
+    s.n = 0
+    s.sum = 0
+    const cur = gl.getPixelRatio()
+    if (avg > 0.021 && cur > 1.001) {
+      onDpr(Math.max(1, cur - 0.25))
+    } else if (avg > 0.033) {
+      onSlow() // 已经是最低分辨率还慢：牺牲阴影
+      s.done = true
+    } else if (avg < 0.0105 && cur < MAX_DPR - 0.001) {
+      onDpr(Math.min(MAX_DPR, cur + 0.25))
+    } else {
+      s.done = true // 已经稳了
+    }
+  })
+  return null
+}
+
+/** 程序生成的摄影棚环境：等距柱状渐变（地面偏暖、天顶偏冷）+ 右前上方一块柔光窗。
+    给皮肤、眼镜、鞋一点高光反射，比单一环境光更像"实拍的小泥人"；不下载 HDR，省一次请求。 */
+function StudioEnv() {
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+
+  useEffect(() => {
+    const W = 64
+    const H = 32
+    const data = new Uint16Array(W * H * 4)
+    const half = THREE.DataUtils.toHalfFloat
+    for (let y = 0; y < H; y++) {
+      const v = y / (H - 1) // 0 = 下方（地面反光），1 = 上方（天光）
+      const base =
+        v < 0.5
+          ? [1.02, 0.98, 0.92].map((c) => c * (0.7 + 0.3 * (1 - v / 0.5)))
+          : [0.92, 0.95, 1.0].map((c) => c * (0.9 + 0.35 * ((v - 0.5) / 0.5)))
+      for (let x = 0; x < W; x++) {
+        const u = x / W
+        // 柔光窗：方位 0.18 圈、仰角 0.62 处的高斯亮斑
+        const du = Math.min(Math.abs(u - 0.18), 1 - Math.abs(u - 0.18))
+        const spot = Math.exp(-((du / 0.09) ** 2) - ((v - 0.62) / 0.2) ** 2) * 1.6
+        const i = (y * W + x) * 4
+        data[i] = half(base[0] + spot)
+        data[i + 1] = half(base[1] + spot)
+        data[i + 2] = half(base[2] + spot)
+        data[i + 3] = half(1)
+      }
+    }
+    const tex = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.HalfFloatType)
+    tex.mapping = THREE.EquirectangularReflectionMapping
+    tex.colorSpace = THREE.LinearSRGBColorSpace
+    tex.needsUpdate = true
+    const pm = new THREE.PMREMGenerator(gl)
+    const rt = pm.fromEquirectangular(tex)
+    scene.environment = rt.texture
+    scene.environmentIntensity = ENV
+    tex.dispose()
+    pm.dispose()
+    return () => {
+      scene.environment = null
+      rt.dispose()
+    }
+  }, [gl, scene])
+
+  return null
 }
 
 /** 整体变换：滚动时转身后退 + 鼠标拖动旋转。没有上下浮动（会让鞋底被画布下沿切掉）。 */
@@ -298,11 +436,22 @@ function GltfAvatar({
   // 带蒙皮的模型必须用 SkinnedMesh.computeBoundingBox()（它会应用骨骼变换）。
   useLayoutEffect(() => {
     rig.current = captureRig(scene)
+    applyEyeShading(scene) // 眼球细节走着色器（顶点密度画不出瞳孔）
 
     const box = new THREE.Box3()
     scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
       if (!mesh.isMesh || mesh.userData.hoverProxy) return
+      // 自身投影 + 接收（主光的阴影贴图）：没有这块，头发/下巴/腋下都没有暗部，看着像贴纸
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      const mat = mesh.material as THREE.MeshStandardMaterial | undefined
+      if (mat && !Array.isArray(mat)) {
+        // 眼镜框是闭合实体：双面渲染时镜框内表面会从脸里透出来，在镜片内缘形成锯齿状的暗边
+        if (mat.name === 'glasses') mat.side = THREE.FrontSide
+        // 镜框贴着颧骨，它投在脸上的细影在阴影贴图里必然锯齿化（表现为"撕纸边"），干脆不投
+        if (mat.name === 'glasses') mesh.castShadow = false
+      }
       const sk = mesh as THREE.SkinnedMesh
       if (sk.isSkinnedMesh) {
         sk.computeBoundingBox()

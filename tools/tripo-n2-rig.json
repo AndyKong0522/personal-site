@@ -1,0 +1,7 @@
+{
+  "_comment": "blender-rig.py --parts for Tripo model n2: sleeve, cuff, hand, thumb per side (Blender +X = character left).",
+  "arm": {
+    "Left": [5, 12, 16, 45],
+    "Right": [6, 15, 14, 46]
+  }
+}

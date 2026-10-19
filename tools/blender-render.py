@@ -23,6 +23,29 @@ if "--tex" in argv:  # swap the base-color texture for a preview
                 if n.type == "TEX_IMAGE" and any(l.to_socket.name == "Base Color" for l in n.outputs[0].links):
                     n.image = new_img
 
+if "--clay" in argv:  # untextured models (e.g. Tripo geometry-only exports): mid-grey clay to read the shape
+    clay = bpy.data.materials.new("clay")
+    clay.use_nodes = True
+    bsdf = clay.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = (0.42, 0.42, 0.44, 1)
+    bsdf.inputs["Roughness"].default_value = 0.6
+    for o in bpy.context.scene.objects:
+        if o.type == "MESH":
+            o.data.materials.clear()
+            o.data.materials.append(clay)
+
+if "--ids" in argv:  # every mesh part a distinct colour, legend printed: to identify parts of a segmented export
+    import colorsys
+    parts = sorted([o for o in bpy.context.scene.objects if o.type == "MESH"], key=lambda o: o.name)
+    for k, o in enumerate(parts):
+        r, g, b = colorsys.hsv_to_rgb((k * 0.618034) % 1, 0.75, 0.95)
+        m = bpy.data.materials.new(f"id{k}")
+        m.use_nodes = True
+        m.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (r, g, b, 1)
+        o.data.materials.clear()
+        o.data.materials.append(m)
+        print(f"ID {o.name} #{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}")
+
 # the glTF importer adds a hidden "Icosphere" bone-shape helper for skinned files: skip tiny meshes
 for o in [o for o in bpy.context.scene.objects if o.type == "MESH" and len(o.data.vertices) < 1000]:
     bpy.data.objects.remove(o, do_unlink=True)
@@ -79,4 +102,6 @@ def shot(name, yaw_deg, target, height):
 for name, yaw in (("front", 0), ("34", 35), ("side", 90), ("back", 180)):
     shot(name, yaw, center, H * 1.08)
 if do_face:
-    shot("face", 0, Vector((center.x, center.y, hi.z - H * 0.1)), H * 0.24)
+    fz = float(argv[argv.index("--face-z") + 1]) if "--face-z" in argv else 0.1   # face centre, fraction of H below the top
+    fh = float(argv[argv.index("--face-h") + 1]) if "--face-h" in argv else 0.24  # framed height, fraction of H
+    shot("face", 0, Vector((center.x, center.y, hi.z - H * fz)), H * fh)

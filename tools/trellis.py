@@ -18,6 +18,8 @@ ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--res", default="1024", choices=["512", "1024", "1536"])
 ap.add_argument("--faces", type=int, default=300000)
 ap.add_argument("--tex", type=int, default=2048)
+ap.add_argument("--preprocessed", action="store_true",
+                help="image is already a TRELLIS *-input.png; skip /preprocess_image (saves a ZeroGPU run)")
 a = ap.parse_args()
 
 if not os.environ.get("HF_TOKEN") and os.path.exists(".env"):
@@ -33,11 +35,15 @@ client = Client(a.space, token=os.environ.get("HF_TOKEN") or None, verbose=False
 log("connected")
 client.predict(api_name="/start_session")
 
-pre = client.predict(handle_file(a.image), api_name="/preprocess_image")
-log(f"preprocessed -> {pre}")
-pre_path = pre["path"] if isinstance(pre, dict) else pre
 os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-shutil.copy(pre_path, os.path.splitext(a.out)[0] + "-input.png")
+if a.preprocessed:
+    # already background-removed (a saved *-input.png): skip the GPU preprocess call, it costs one ZeroGPU run
+    pre_path = a.image
+else:
+    pre = client.predict(handle_file(a.image), api_name="/preprocess_image")
+    log(f"preprocessed -> {pre}")
+    pre_path = pre["path"] if isinstance(pre, dict) else pre
+    shutil.copy(pre_path, os.path.splitext(a.out)[0] + "-input.png")
 
 client.predict(
     handle_file(pre_path), a.seed, a.res,
