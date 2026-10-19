@@ -10,10 +10,10 @@
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 // 不用 drei 的 <Environment preset>：它会从外部 CDN 下载 HDR，拖慢首屏。
-import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { applyAvatarShading } from './avatarShading'
 import { AVATAR_MODEL } from '../models'
+import { useAvatarGLTF } from './useAvatarGLTF'
 
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
@@ -433,7 +433,7 @@ function ProgressiveAvatar(props: {
 
 /** 只负责把全尺寸模型下载+解析完，然后通知父组件替换。自己不画任何东西。 */
 function LoadFull({ onReady }: { onReady: () => void }) {
-  useGLTF(MODEL.url) // 解析完成前会挂起（下载进度交给浏览器）
+  useAvatarGLTF(MODEL.url) // 解析完成前会挂起（下载进度交给浏览器）
   useEffect(() => {
     onReady()
   }, [onReady])
@@ -451,7 +451,7 @@ function GltfAvatar({
   pointer: React.RefObject<Pointer>
   drag: React.RefObject<DragState>
 }) {
-  const { scene } = useGLTF(url)
+  const scene = useAvatarGLTF(url)
   const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
   const invalidate = useThree((s) => s.invalidate)
