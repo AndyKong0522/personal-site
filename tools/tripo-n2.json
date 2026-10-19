@@ -4,6 +4,7 @@
     "cloth":   {"rough": 0.94},
     "skin":    {"rough": 0.68},
     "hair":    {"rough": 0.52},
+    "brow":    {"rough": 0.62},
     "shoe":    {"rough": 0.55},
     "glasses": {"rough": 0.18},
     "eye":     {"rough": 0.70}
@@ -30,7 +31,7 @@
     "hoodie":  {"rgb": [150, 148, 150], "parts": [1],       "mat": "cloth"},
     "string":  {"rgb": [172, 168, 166], "parts": [66, 69],  "mat": "cloth"},
     "glasses": {"rgb": [24, 24, 24],    "parts": [20, 26],  "mat": "glasses"},
-    "brow":    {"rgb": [58, 44, 38],    "parts": [67, 71],  "mat": "hair"},
+    "brow":    {"rgb": [58, 44, 38],    "parts": [67, 71],  "mat": "brow"},
     "eye":     {"rgb": [248, 246, 243], "parts": [41, 49],  "mat": "eye"},
     "hair":    {"rgb": [56, 49, 48],    "parts": "*",       "mat": "hair"}
   },

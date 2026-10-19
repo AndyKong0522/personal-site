@@ -13,6 +13,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { applyEyeShading } from './eyeShading'
+import { applyHairDetail } from './hairDetail'
 
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
@@ -437,6 +438,7 @@ function GltfAvatar({
   useLayoutEffect(() => {
     rig.current = captureRig(scene)
     applyEyeShading(scene) // 眼球细节走着色器（顶点密度画不出瞳孔）
+    applyHairDetail(scene) // 发丝凹凸也走着色器（不加面数）
 
     const box = new THREE.Box3()
     scene.traverse((obj) => {
