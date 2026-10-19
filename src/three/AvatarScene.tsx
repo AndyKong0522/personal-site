@@ -7,22 +7,20 @@
 // 再换算成每根骨骼的局部旋转。不直接绕骨骼局部轴转：这套骨骼的局部轴是斜的，
 // 绕局部 X 轴"点头"会混进歪头和摇头。
 
-import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 // 不用 drei 的 <Environment preset>：它会从外部 CDN 下载 HDR，拖慢首屏。
 import * as THREE from 'three'
 import { applyAvatarShading } from './avatarShading'
 import { AVATAR_MODEL } from '../models'
-import { useAvatarGLTF, preloadAvatarGLTF } from './useAvatarGLTF'
+import { gpuTier } from '../capabilities'
+import { useAvatarGLTF } from './useAvatarGLTF'
 
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
 const MODEL = {
   // v1 设计图 → Tripo（白模）+ tools/tripo-vcol.py 顶点色/AO + tools/blender-rig.py 绑骨，28 根骨骼，程序化驱动
   url: AVATAR_MODEL.full,
-  // 同一条管线出的 4 万面小样：先连它把人物显示出来，全尺寸在后台接着下载，好了直接换。
-  // 两个模型的骨骼、尺度、静止姿势完全一致（同一个绑骨脚本），所以替换时不会跳。
-  lite: AVATAR_MODEL.lite,
 }
 
 /** 归一化后的统一高度。相机距离按这个高度调，换模型不用重新调。 */
@@ -38,11 +36,21 @@ const MAX_DPR = 1.5
     dpr 属性盖回去，实测降下去又被拽回上限。 */
 const LEVELS = [
   { dpr: 1, shadows: false }, // 0 最省：低分屏 + 无阴影
-  { dpr: 1.25, shadows: false }, // 1 起步档
+  { dpr: 1.25, shadows: false }, // 1
   { dpr: MAX_DPR, shadows: false }, // 2 满分辨率
   { dpr: MAX_DPR, shadows: true }, // 3 全开：分辨率满 + 主光自身阴影
 ] as const
-const START_LEVEL = 1
+
+/** 起始档按显卡型号定（见 capabilities.gpuTier）。手机一律不开阴影：省电，也不容易掉帧。 */
+function initialLevel(): number {
+  const mobile =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 720)
+  const tier = gpuTier()
+  if (tier === 'slow') return 0
+  if (mobile) return tier === 'fast' ? 2 : 1
+  return tier === 'fast' ? 3 : 2
+}
 
 /** 灯光强度：半球环境光（压得很低，主要靠环境立方图和主光塑形）、主光（右前上）、补光（左前）、轮廓光（后上） */
 const HEMI = 0.25
@@ -56,9 +64,17 @@ const KEY_POS: [number, number, number] = [2.5, 4, 5]
 /** 待机时头抬起的角度。v3 的绑定姿势是低头的（需要 0.42 rad 补回来）；
     现在的模型（TRELLIS 生成 + tools/blender-rig.py 绑骨）绑定时头是正的，只再抬一点点显得精神。 */
 const HEAD_LIFT = 0.06
-/** 头跟随光标：左右幅度；往上看的幅度；往下看的幅度（往下的幅度小一些，
-    光标停在下方文字区时不会显得在瞪地）。 */
-const LOOK = { yaw: 0.58, up: 0.3, down: 0.1 }
+/** 头跟随光标：左右幅度；往上看的幅度；往下看的幅度。
+    往上抬的量比往下收的量小——低头是颈骨更自然的动作，抬头太多会露出下巴底面、
+    也会把发际线拉得奇怪。0.22 / 0.36 约等于抬头 13°、低头 21°。 */
+const LOOK = { yaw: 0.62, up: 0.22, down: 0.36 }
+
+/** 调试用：?pose=waveL|waveR|up|down 固定一个姿势，方便截图比对（正常访问没有这个参数）。
+    ?bg=#ff00ff 把画布底色换成纯色，用来检查网格有没有破洞（洞会露出这个颜色）。 */
+const DEBUG_PARAMS =
+  typeof location === 'undefined' ? null : new URLSearchParams(location.search)
+const DEBUG_POSE = DEBUG_PARAMS?.get('pose') ?? null
+const DEBUG_BG = DEBUG_PARAMS?.get('bg') ?? null
 
 /** 挥手时上臂、前臂在模型空间里要指向的方向（人物左臂；右臂把 x 取反）。
     上臂往**外**抬、略朝下，前臂再往上翻——手落在肩膀外侧、下巴高度。
@@ -103,7 +119,7 @@ type Props = {
 
 export default function AvatarScene({ scrollProgress, pointer, reducedMotion, paused, onReady }: Props) {
   const drag = useRef<DragState>({ x: 0, y: 0, active: false })
-  const [level, setLevel] = useState(START_LEVEL)
+  const [level, setLevel] = useState(initialLevel)
   const dpr = LEVELS[level].dpr
   const shadowsOn = LEVELS[level].shadows
 
@@ -129,6 +145,7 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, pa
       onCreated={({ gl }) => {
         // R3F 默认 ACES 会把肤色、夹克的中间调压灰压暗；Neutral 更忠实于贴图（贴图按 2D 设计图取色）
         gl.toneMapping = THREE.NeutralToneMapping
+        if (DEBUG_BG) gl.setClearColor(new THREE.Color(DEBUG_BG), 1)
         onReady?.()
       }}
       aria-hidden="true"
@@ -157,19 +174,18 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, pa
       <Suspense fallback={null}>
         <AdaptiveQuality reducedMotion={reducedMotion} level={level} onLevel={setLevel} />
         <Rig scrollProgress={scrollProgress} reducedMotion={reducedMotion} drag={drag}>
-          <ProgressiveAvatar reducedMotion={reducedMotion} pointer={pointer} drag={drag} />
+          <GltfAvatar url={MODEL.url} reducedMotion={reducedMotion} pointer={pointer} drag={drag} />
         </Rig>
       </Suspense>
     </Canvas>
   )
 }
 
-/** 画质自适应。启动后先跳过 2 秒（加载、入场动画、着色器编译都在这一段，拿它做判断会误判——
-    上一版就是因此在启动时把分辨率误降了一档），然后每 30 帧看一次平均帧时间：
-    · 稳定跑满 vsync（平均 ≤18.5ms）→ 升一档
-    · 掉到 38fps 以下（>26ms）→ 降一档
-    · 两者之间 → 保持
-    每次升降后重新等 2 秒再量（避免把切换的抖动算进去），最多移动 4 次就停手。 */
+/** 画质兜底：只**降**不升。
+    起始档由显卡型号决定（见 initialLevel），所以正常情况下这里什么都不会做；
+    真正掉帧（平均 >26ms，约 38fps 以下）才退一档。不做"往上爬"是因为
+    每次都伴随分辨率/阴影的变化，用户能看出来——那正是"模型一点点加载出来"的来源。
+    前 2 秒不量：加载、入场动画、着色器编译都挤在这段，拿它判断会误判。 */
 function AdaptiveQuality({
   reducedMotion,
   level,
@@ -192,11 +208,7 @@ function AdaptiveQuality({
     const avg = s.sum / s.n
     s.n = 0
     s.sum = 0
-    if (avg <= 0.0185 && level < LEVELS.length - 1) {
-      onLevel(level + 1)
-      s.moves++
-      s.warm = 0
-    } else if (avg > 0.026 && level > 0) {
+    if (avg > 0.026 && level > 0) {
       onLevel(level - 1)
       s.moves++
       s.warm = 0
@@ -408,46 +420,6 @@ function captureRig(scene: THREE.Object3D): Rigging {
 
 type GestureKind = 'nod' | 'waveL' | 'waveR'
 
-/** 渐进加载：先挂 4 万面的小样（几百 KB，先有人），全尺寸在后台下完再换。
-    两个模型的骨骼/尺度/静止姿势一致，替换时不会跳。 */
-function ProgressiveAvatar(props: {
-  reducedMotion: boolean
-  pointer: React.RefObject<Pointer>
-  drag: React.RefObject<DragState>
-}) {
-  const [full, setFull] = useState(false)
-  // 给 ?stats=1 的角标看：现在画的是小样还是全尺寸
-  useEffect(() => {
-    document.documentElement.dataset.avatarModel = full ? 'full' : 'lite'
-  }, [full])
-  // 回调要稳定，否则 LoadFull 的 effect 每次渲染都会重跑
-  const onFullReady = useCallback(() => setFull(true), [])
-  return (
-    <>
-      {!full && <GltfAvatar url={MODEL.lite} {...props} />}
-      <LoadFull onReady={onFullReady} />
-      {full && <GltfAvatar url={MODEL.url} {...props} />}
-    </>
-  )
-}
-
-/** 只负责把全尺寸模型下载+解析完，然后通知父组件替换。自己不画任何东西。
-    这里刻意不用 Suspense 挂起：线上实测过"抛 promise 让边界重试"的写法——请求返回 200、
-    模型也解析了，但替换始终没触发（本地却正常）。回调式更直白：失败就一直用占位小样，
-    不影响页面显示。 */
-function LoadFull({ onReady }: { onReady: () => void }) {
-  useEffect(() => {
-    let alive = true
-    preloadAvatarGLTF(MODEL.url).then(() => {
-      if (alive) onReady()
-    })
-    return () => {
-      alive = false
-    }
-  }, [onReady])
-  return null
-}
-
 function GltfAvatar({
   url,
   reducedMotion,
@@ -494,6 +466,8 @@ function GltfAvatar({
   useLayoutEffect(() => {
     rig.current = captureRig(scene)
     applyAvatarShading(scene) // 眼球的虹膜/高光 + 发丝凹凸，所有材质共用一个着色器程序
+    // 给 ?stats=1 角标和自检脚本看：模型已经挂上来了
+    document.documentElement.dataset.avatarModel = 'full' 
 
     const box = new THREE.Box3()
     scene.traverse((obj) => {
@@ -506,6 +480,10 @@ function GltfAvatar({
       if (mat && !Array.isArray(mat)) {
         // 眼镜框是闭合实体：双面渲染时镜框内表面会从脸里透出来，在镜片内缘形成锯齿状的暗边
         if (mat.name === 'glasses') mat.side = THREE.FrontSide
+        // 衣服是"衣身 + 袖子"两片独立网格，绑骨后各跟着自己的骨骼走：抬臂时肩线错开，
+        // 正面就能直接看到页面背景（模型本身没破，是两片之间本来就没封口）。
+        // 布料改双面渲染后，错开时看到的是袖子内壁/衣身内侧，不再是一个透光的洞。
+        if (mat.name === 'cloth') mat.side = THREE.DoubleSide
         // 镜框贴着颧骨，它投在脸上的细影在阴影贴图里必然锯齿化（表现为"撕纸边"），干脆不投
         if (mat.name === 'glasses') mesh.castShadow = false
       }
@@ -645,10 +623,15 @@ function GltfAvatar({
       g.t += dt
       if (g.t >= (g.kind === 'nod' ? NOD_DUR : WAVE_DUR)) g.kind = null
     }
+    // 调试：把挥手姿势按住不动，方便截图看腋下/肩线
+    if (DEBUG_POSE === 'waveL' || DEBUG_POSE === 'waveR') {
+      g.kind = DEBUG_POSE
+      g.t = WAVE_DUR * 0.45
+    }
 
     // ---- 头朝光标 ----
     const px = pointer.current?.x ?? 0
-    const py = pointer.current?.y ?? 0
+    const py = DEBUG_POSE === 'down' ? 1 : DEBUG_POSE === 'up' ? -1 : (pointer.current?.y ?? 0)
     aimYaw.current = THREE.MathUtils.damp(aimYaw.current, px * LOOK.yaw, 3.2, dt)
     // 正 pitch = 低头。光标在上（py<0）→ 抬头；在下 → 只微微低一点
     const pitchTarget = -HEAD_LIFT + (py < 0 ? py * LOOK.up : py * LOOK.down)
@@ -659,21 +642,29 @@ function GltfAvatar({
       const s = Math.sin((Math.PI * (g.t % NOD_BEAT)) / NOD_BEAT)
       nod = NOD_AMP * s * s
     }
-    const yaw = aimYaw.current + Math.sin(t * 0.42) * 0.04
-    const pitch = aimPitch.current + Math.sin(t * 0.63) * 0.015 + nod
-    const breathe = Math.sin(t * 1.15) * 0.012
+    // ---- 待机动作 ----
+    // 呼吸 4.6s、重心左右移 7.4s，两个周期互质，几十秒内不会看出重复。
+    // 吸气比呼气略快（sin 的上升段就是吸气），胸口先起、头再跟着微微抬一点。
+    const breath = Math.sin(((t % 4.6) / 4.6) * Math.PI * 2)
+    const breathe = breath * 0.014
+    const shift = Math.sin((t * Math.PI * 2) / 7.4)
+    const idleYaw = Math.sin(t * 0.42) * 0.028 + shift * 0.016
+    const idlePitch = Math.sin(t * 0.63) * 0.01 - breathe * 0.3
+    const yaw = aimYaw.current + idleYaw
+    const pitch = aimPitch.current + idlePitch + nod
+    const breatheArm = Math.sin(t * 0.61) * 0.012
 
     // 躯干 → 脖子 → 头。转动量都是"相对绑定姿势的总量"，父骨骼先驱动
     driven.clear()
-    drive(bones.spine1, rest, yawPitch(D.spine1, yaw * 0.05, breathe * 0.6))
-    drive(bones.spine2, rest, yawPitch(D.spine2, yaw * 0.11, breathe))
+    drive(bones.spine1, rest, yawPitch(D.spine1, yaw * 0.05, -breathe * 0.55))
+    drive(bones.spine2, rest, yawPitch(D.spine2, yaw * 0.11, -breathe))
     drive(bones.neck, rest, yawPitch(D.neck, yaw * 0.45, pitch * NECK_SHARE))
     drive(bones.head, rest, yawPitch(D.head, yaw, pitch))
 
     // ---- 手臂：待机微摆 + 挥手 ----
     const waveW = g.kind === 'waveL' || g.kind === 'waveR' ? waveEnvelope(g.t) : 0
     const swing = Math.sin(g.t * WAVE_FREQ) * WAVE_SWING
-    const idle = Math.sin(t * 0.85) * 0.02
+    const idle = breatheArm
     for (const side of [1, -1] as const) {
       const L = side > 0
       poseArm({

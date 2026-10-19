@@ -121,8 +121,13 @@ def zprofile_mid(z):
     return ((np.abs(V[:, 2] - z) < 0.01) & (np.abs(V[:, 0]) < 0.012)).sum()
 
 top = V[:, 2].max()
-# crotch = highest z (scanning up from the knees) where nothing sits between the legs
-crotch = next(z for z in np.arange(0.4, 1.2, 0.005) if zprofile_mid(z) > 20)
+# crotch = 从膝盖往上扫，第一处两腿之间有实体（中间 1.2cm 宽的薄片里有点）的地方。
+# 阈值必须与顶点数无关：全尺寸（9.2 万顶点）和 4 万/1.5 万面的小样要对出**同一套骨骼**，
+# 否则两者互换时会跳。实测这个模型的两条腿靠得很近，薄片里总能扫到顶点，
+# 结果稳定落在扫描区间下界（0.400），三个密度都一样——那就用固定小阈值，把它钉死。
+crotch = next((z for z in np.arange(0.4, 1.2, 0.005) if zprofile_mid(z) > 3), None)
+if crotch is None:
+    raise RuntimeError("cannot locate the crotch: no z slice has geometry between the legs")
 # chin = narrowest slice between collar and head
 NECK_LO, NECK_HI = (float(v) for v in opt("--neck-range", "1.30,1.60").split(","))
 zs = np.arange(NECK_LO, NECK_HI, 0.005)

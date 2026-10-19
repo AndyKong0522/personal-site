@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import { content, DISPLAY_LINES, EMAIL, type Lang } from './content'
-import { canRender3D, prefersReducedMotion } from './capabilities'
+import { canRender3D, isLowEndDevice, prefersReducedMotion } from './capabilities'
 import { AVATAR_MODEL } from './models'
 import StatsOverlay from './StatsOverlay'
 
@@ -11,6 +11,17 @@ gsap.registerPlugin(ScrollTrigger)
 
 // three.js 体积大，单独拆包，首屏不阻塞。
 const AvatarScene = lazy(() => import('./three/AvatarScene'))
+
+// 模型预载在**模块求值**时就发起（比等 React 挂载再插 <link> 早 100~200ms），
+// 和 3D 代码包并行下载。省流量/低端设备上不预载。
+if (typeof document !== 'undefined' && !isLowEndDevice()) {
+  const link = document.createElement('link')
+  link.rel = 'preload'
+  link.as = 'fetch'
+  link.href = AVATAR_MODEL.full
+  link.crossOrigin = 'anonymous'
+  document.head.appendChild(link)
+}
 
 function initialLang(): Lang {
   const saved = localStorage.getItem('lang')
@@ -37,28 +48,15 @@ export default function App() {
     localStorage.setItem('lang', lang)
   }, [lang])
 
-  // 首屏渲染完就尽快加载 3D。原来 timeout 给到 1500ms，页面忙时会白等一秒多；
-  // 模型已经从 4.55 MB 压到 1.26 MB，早点发请求能明显缩短它出现的时间。
+  // 首屏渲染完就尽快加载 3D。
   useEffect(() => {
     if (!canRender3D()) return
-    const start = () => {
-      // 让模型和 3D 代码包**并行**下载：不这样做的话，要等代码包下载 + 执行完，
-      // AvatarScene 组件挂载后才会发模型请求，白白多等两三秒。
-      // 用 preload 而不是 prefetch：这个请求马上就会真的用到。
-      const link = document.createElement('link')
-      link.rel = 'preload'
-      link.as = 'fetch'
-      // 先预载小样（几百 KB，决定"人什么时候出现"），全尺寸由场景挂载后再下
-      link.href = AVATAR_MODEL.lite
-      link.crossOrigin = 'anonymous'
-      document.head.appendChild(link)
-      setUse3D(true)
-    }
+    const start = () => setUse3D(true)
     if ('requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(start, { timeout: 400 })
+      const id = window.requestIdleCallback(start, { timeout: 300 })
       return () => window.cancelIdleCallback(id)
     }
-    const id = setTimeout(start, 200)
+    const id = setTimeout(start, 120)
     return () => clearTimeout(id)
   }, [])
 

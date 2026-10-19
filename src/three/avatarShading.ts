@@ -140,7 +140,10 @@ export function applyAvatarShading(root: THREE.Object3D) {
     if (m.isMesh) meshes.push(m)
   })
   if (!meshes.length) return
-  // 两只眼球的位置和半径从几何里量（不写死坐标）
+  // 两只眼球的位置和半径从几何里量。
+  // 测量失败时用全尺寸模型量出来的值兜底：眼球位置是**角色属性**，跟网格密度无关。
+  // 1.5 万面的占位小样里眼球只剩几个三角，量不出球心，没有兜底就会渲染成一片白。
+  const EYE_FALLBACK = { x: [-0.0462, 0.0433], y: 0.7728, r: 0.046 }
   const eyeMeshes = meshes.filter((m) => (m.material as THREE.Material)?.name === 'eye')
   const centres: THREE.Vector4[] = []
   const radii: number[] = []
@@ -157,7 +160,7 @@ export function applyAvatarShading(root: THREE.Object3D) {
         cy += pos.getY(i)
         n++
       }
-      if (n < 8) continue
+      if (n < 4) continue // 顶点太少，量出来的中心会偏
       cx /= n
       cy /= n
       let R = 0
@@ -170,9 +173,16 @@ export function applyAvatarShading(root: THREE.Object3D) {
       centres.push(new THREE.Vector4(cx, cy, R, -Math.sign(cx) || 1))
     }
   }
-  const avgR = radii.length ? radii.reduce((a, b) => a + b, 0) / radii.length : 0
+  if (centres.length < 2) {
+    centres.length = 0
+    radii.length = 1
+    radii[0] = EYE_FALLBACK.r
+    for (const x of EYE_FALLBACK.x) {
+      centres.push(new THREE.Vector4(x, EYE_FALLBACK.y, EYE_FALLBACK.r, -Math.sign(x)))
+    }
+  }
+  const avgR = radii.length ? radii.reduce((a, b) => a + b, 0) / radii.length : EYE_FALLBACK.r
   for (const c of centres) c.z = avgR
-  while (centres.length < 2) centres.push(new THREE.Vector4())
 
   const lin = (hex: string) => new THREE.Color(hex)
   // 注意：程序缓存键 = onBeforeCompile.toString()，所有材质必须用**同一份源码**的包装函数才能共享程序；
