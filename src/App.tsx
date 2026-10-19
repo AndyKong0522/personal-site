@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import { content, DISPLAY_LINES, EMAIL, type Lang } from './content'
 import { canRender3D, prefersReducedMotion } from './capabilities'
+import StatsOverlay from './StatsOverlay'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -22,10 +23,12 @@ export default function App() {
   const [use3D, setUse3D] = useState(false)
   const [sceneReady, setSceneReady] = useState(false)
   const [active, setActive] = useState(0)
+  const [heroVisible, setHeroVisible] = useState(true)
   const scrollProgress = useRef(0)
   const pointer = useRef({ x: 0, y: 0 })
   const barRef = useRef<HTMLSpanElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const t = content[lang]
 
   useEffect(() => {
@@ -66,6 +69,15 @@ export default function App() {
     window.addEventListener('pointermove', onMove, { passive: true })
     return () => window.removeEventListener('pointermove', onMove)
   }, [])
+
+  // 人像移出视口就停渲染：滚到下面的项目/研究区时，3D 不该继续抢 GPU 和主线程。
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => setHeroVisible(e.isIntersecting), { threshold: 0.01 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [use3D])
 
   // 左下角的分段指示跟着当前可视区块走。
   useEffect(() => {
@@ -181,7 +193,7 @@ export default function App() {
       <main id="main">
         <section className="hero" id="top">
           {/* 3D 层：居中人像。pointer-events 关掉，不挡住上面的文字和按钮 */}
-          <div className="hero-stage">
+          <div className="hero-stage" ref={stageRef}>
             <img
               className={`avatar-fallback${sceneReady ? ' is-hidden' : ''}`}
               src="/avatar-placeholder.svg"
@@ -196,6 +208,7 @@ export default function App() {
                     scrollProgress={scrollProgress}
                     pointer={pointer}
                     reducedMotion={reducedMotion}
+                    paused={!heroVisible}
                     onReady={() => setSceneReady(true)}
                   />
                 </div>
@@ -351,6 +364,7 @@ export default function App() {
       <div className="progress" aria-hidden="true">
         <span ref={barRef} className="progress-bar" />
       </div>
+      <StatsOverlay />
     </div>
   )
 }

@@ -12,8 +12,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 // 不用 drei 的 <Environment preset>：它会从外部 CDN 下载 HDR，拖慢首屏。
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import { applyEyeShading } from './eyeShading'
-import { applyHairDetail } from './hairDetail'
+import { applyAvatarShading } from './avatarShading'
 
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
@@ -83,15 +82,25 @@ type Props = {
   pointer: React.RefObject<Pointer>
   /** 减少动态效果时关闭跟随鼠标、待机摆动和滚动转身。 */
   reducedMotion: boolean
+  /** 人像不在视口里时暂停渲染（R3F 用 demand 帧循环，不再每帧抢 GPU）。 */
+  paused?: boolean
   onReady?: () => void
 }
 
-export default function AvatarScene({ scrollProgress, pointer, reducedMotion, onReady }: Props) {
+export default function AvatarScene({ scrollProgress, pointer, reducedMotion, paused, onReady }: Props) {
   const drag = useRef<DragState>({ x: 0, y: 0, active: false })
   // 弱机器兜底：帧率实在上不来时关掉主光的自身阴影（阴影是整场景的第二遍绘制）
   const [shadowsOn, setShadowsOn] = useState(true)
   // 分辨率也用 state 驱动：命令式 setDpr 会被 Canvas 重新应用 dpr 属性盖回去，state 才稳
   const [dpr, setDpr] = useState(initialDpr)
+
+  // 给 ?stats=1 的角标看：现在是哪一档画质
+  useEffect(() => {
+    document.documentElement.dataset.avatarShadows = shadowsOn ? '1' : '0'
+  }, [shadowsOn])
+  useEffect(() => {
+    document.documentElement.dataset.avatarModel = (MODEL.url.split('/').pop() ?? '').replace('.glb', '')
+  }, [])
 
   return (
     <Canvas
@@ -104,7 +113,8 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, on
       shadows={{ type: THREE.PCFShadowMap }}
       // low-power 会让浏览器优先挑省电显卡（笔记本上就是核显），这里要的是性能
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      frameloop={reducedMotion ? 'demand' : 'always'}
+      // 人像滚出视口 / 减少动态效果时用 demand：只在 invalidate 时画一帧
+      frameloop={reducedMotion || paused ? 'demand' : 'always'}
       onCreated={({ gl }) => {
         // R3F 默认 ACES 会把肤色、夹克的中间调压灰压暗；Neutral 更忠实于贴图（贴图按 2D 设计图取色）
         gl.toneMapping = THREE.NeutralToneMapping
@@ -437,8 +447,7 @@ function GltfAvatar({
   // 带蒙皮的模型必须用 SkinnedMesh.computeBoundingBox()（它会应用骨骼变换）。
   useLayoutEffect(() => {
     rig.current = captureRig(scene)
-    applyEyeShading(scene) // 眼球细节走着色器（顶点密度画不出瞳孔）
-    applyHairDetail(scene) // 发丝凹凸也走着色器（不加面数）
+    applyAvatarShading(scene) // 眼球的虹膜/高光 + 发丝凹凸，所有材质共用一个着色器程序
 
     const box = new THREE.Box3()
     scene.traverse((obj) => {

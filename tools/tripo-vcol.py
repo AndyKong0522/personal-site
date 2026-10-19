@@ -276,6 +276,12 @@ if CAVITY:
     col[:, :3] *= (1.0 - occl + ridge)[:, None]
     print(f"cavity: max darken {occl.max():.2f} max lift {ridge.max():.2f}")
 
+# 眼球（part 41/49）顶点色写白：颜色全部由着色器画（src/three/avatarShading.ts），白色让眼球材质
+# 和其他部分共用同一个着色器程序——程序少一份，首屏着色器编译就快一截。
+EYE_IDS = [int(e["part"]) for e in CFG.get("eyes", [])]
+if EYE_IDS:
+    col[np.isin(PID, np.array(EYE_IDS, np.int32)), :3] = 1.0
+
 # a little vertical gradient in the hair reads as volume even where the geometry is flat
 col[:, 3] = 1
 ca = me.color_attributes.new("Col", "FLOAT_COLOR", "POINT")
