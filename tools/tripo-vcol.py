@@ -214,6 +214,43 @@ if AO_K > 0:
     col[:, :3] *= k[:, None]
     me.color_attributes.remove(ao_attr)
 
+# ---------- curvature (cavity) shading ----------
+# The 150k mesh still has most of the grooves (hair strands, corduroy ribs) but a flat vertex colour hides
+# them: darken the concave vertices and lift the convex ones and every strand reads as its own ridge,
+# without touching the geometry.
+CAVITY = CFG.get("cavity", {})
+if CAVITY:
+    F = np.empty(len(me.polygons) * 3, np.int64)
+    me.polygons.foreach_get("vertices", F)
+    F = F.reshape(-1, 3)
+    acc = np.zeros_like(P)
+    cnt = np.zeros(len(P))
+    for a_, b_ in ((0, 1), (1, 2), (2, 0)):
+        np.add.at(acc, F[:, a_], P[F[:, b_]])
+        np.add.at(cnt, F[:, a_], 1)
+        np.add.at(acc, F[:, b_], P[F[:, a_]])
+        np.add.at(cnt, F[:, b_], 1)
+    lap = acc / np.maximum(cnt, 1)[:, None] - P
+    ln = np.linalg.norm(lap, axis=1)
+    cav = np.where(ln > 1e-12, (lap * N).sum(1) / np.maximum(ln, 1e-12), 0.0)
+    # per-category z-score: only how a vertex compares with its own part matters, not the absolute value
+    wt = np.zeros(len(P))
+    z = np.zeros(len(P))
+    for name, c in cats.items():
+        ps = c.get("parts", [])
+        if ps == "*":
+            ps = [p for p in np.unique(PID) if int(p) not in listed]
+        m = np.isin(PID, np.array([int(p) for p in ps], np.int32))
+        if not m.any():
+            continue
+        s = cav[m]
+        z[m] = np.clip((s - np.median(s)) / (s.std() + 1e-6), -2.5, 2.5)
+        wt[m] = float(CAVITY.get(name, CAVITY.get("default", 0.0)))
+    occl = wt * 0.24 * np.clip(z, 0, 2.5)      # 凹进去的地方压暗
+    ridge = wt * 0.14 * np.clip(-z, 0, 2.5)    # 凸起来的棱提亮（发丝的高光就靠它）
+    col[:, :3] *= (1.0 - occl + ridge)[:, None]
+    print(f"cavity: max darken {occl.max():.2f} max lift {ridge.max():.2f}")
+
 # a little vertical gradient in the hair reads as volume even where the geometry is flat
 col[:, 3] = 1
 ca = me.color_attributes.new("Col", "FLOAT_COLOR", "POINT")

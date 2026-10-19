@@ -3,10 +3,23 @@
   "materials": {
     "cloth":   {"rough": 0.94},
     "skin":    {"rough": 0.68},
-    "hair":    {"rough": 0.62},
+    "hair":    {"rough": 0.52},
     "shoe":    {"rough": 0.55},
     "glasses": {"rough": 0.18},
     "eye":     {"rough": 0.70}
+  },
+  "cavity": {
+    "default": 0.35,
+    "hair": 1.25,
+    "brow": 0.9,
+    "jacket": 0.45,
+    "hoodie": 0.4,
+    "pants": 0.3,
+    "glasses": 0.2,
+    "shoe": 0.3,
+    "lace": 0.2,
+    "skin": 0.22,
+    "eye": 0.0
   },
   "categories": {
     "shoe":    {"rgb": [238, 236, 232], "parts": [7, 8],    "mat": "shoe"},
