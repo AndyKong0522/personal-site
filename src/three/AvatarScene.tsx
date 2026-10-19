@@ -7,13 +7,13 @@
 // 再换算成每根骨骼的局部旋转。不直接绕骨骼局部轴转：这套骨骼的局部轴是斜的，
 // 绕局部 X 轴"点头"会混进歪头和摇头。
 
-import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 // 不用 drei 的 <Environment preset>：它会从外部 CDN 下载 HDR，拖慢首屏。
 import * as THREE from 'three'
 import { applyAvatarShading } from './avatarShading'
 import { AVATAR_MODEL } from '../models'
-import { useAvatarGLTF } from './useAvatarGLTF'
+import { useAvatarGLTF, preloadAvatarGLTF } from './useAvatarGLTF'
 
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
@@ -420,22 +420,30 @@ function ProgressiveAvatar(props: {
   useEffect(() => {
     document.documentElement.dataset.avatarModel = full ? 'full' : 'lite'
   }, [full])
+  // 回调要稳定，否则 LoadFull 的 effect 每次渲染都会重跑
+  const onFullReady = useCallback(() => setFull(true), [])
   return (
     <>
       {!full && <GltfAvatar url={MODEL.lite} {...props} />}
-      <Suspense fallback={null}>
-        <LoadFull onReady={() => setFull(true)} />
-      </Suspense>
+      <LoadFull onReady={onFullReady} />
       {full && <GltfAvatar url={MODEL.url} {...props} />}
     </>
   )
 }
 
-/** 只负责把全尺寸模型下载+解析完，然后通知父组件替换。自己不画任何东西。 */
+/** 只负责把全尺寸模型下载+解析完，然后通知父组件替换。自己不画任何东西。
+    这里刻意不用 Suspense 挂起：线上实测过"抛 promise 让边界重试"的写法——请求返回 200、
+    模型也解析了，但替换始终没触发（本地却正常）。回调式更直白：失败就一直用占位小样，
+    不影响页面显示。 */
 function LoadFull({ onReady }: { onReady: () => void }) {
-  useAvatarGLTF(MODEL.url) // 解析完成前会挂起（下载进度交给浏览器）
   useEffect(() => {
-    onReady()
+    let alive = true
+    preloadAvatarGLTF(MODEL.url).then(() => {
+      if (alive) onReady()
+    })
+    return () => {
+      alive = false
+    }
   }, [onReady])
   return null
 }

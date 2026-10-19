@@ -42,7 +42,7 @@ export function useAvatarGLTF(url: string): THREE.Group {
   return e.scene
 }
 
-/** 后台先把模型下下来（不挂起），稍后再用。 */
-export function preloadAvatarGLTF(url: string) {
-  entryFor(url)
+/** 后台先把模型下下来（不挂起），稍后再用。返回的 promise 结束即可切换。 */
+export function preloadAvatarGLTF(url: string): Promise<void> {
+  return entryFor(url).promise
 }
