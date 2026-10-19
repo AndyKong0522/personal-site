@@ -17,7 +17,11 @@ import { applyAvatarShading } from './avatarShading'
 /** 当前模型。换模型只改 url 即可——GltfAvatar 会在加载后自动量包围盒、
     缩放到 AVATAR_HEIGHT 并把身体中心对到世界原点，所以取景参数与模型无关。 */
 const MODEL = {
-  url: '/models/avatar.glb', // v1 设计图 → Tripo（白模）+ tools/tripo-vcol.py 顶点色/AO + tools/blender-rig.py 绑骨，28 根骨骼，程序化驱动
+  // v1 设计图 → Tripo（白模）+ tools/tripo-vcol.py 顶点色/AO + tools/blender-rig.py 绑骨，28 根骨骼，程序化驱动
+  url: '/models/avatar.glb',
+  // 同一条管线出的 4 万面小样：先连它把人物显示出来，全尺寸在后台接着下载，好了直接换。
+  // 两个模型的骨骼、尺度、静止姿势完全一致（同一个绑骨脚本），所以替换时不会跳。
+  lite: '/models/avatar-lite.glb',
 }
 
 /** 归一化后的统一高度。相机距离按这个高度调，换模型不用重新调。 */
@@ -27,8 +31,17 @@ const CAMERA_Z = 2.16
 /** 渲染分辨率上限。2.0 在 4K / 高分屏上等于四倍像素量，人像本身不需要那么细；
     帧率不够时 AdaptiveDpr 会再往下调。 */
 const MAX_DPR = 1.5
-/** 初始渲染分辨率：跟随屏幕，但不超过 MAX_DPR（4K 高分屏上 2.0 等于四倍像素量）。 */
-const initialDpr = () => Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1, MAX_DPR)
+/** 画质阶梯。从中间一档起步（快、但不至于糊），之后按实测帧时间上下移动：
+    能稳定跑满 vsync 就往上升，掉到 38fps 以下就往下降。
+    分辨率走 state（Canvas 的 dpr 属性），不用命令式 setDpr：后者会被重渲染时重新应用的
+    dpr 属性盖回去，实测降下去又被拽回上限。 */
+const LEVELS = [
+  { dpr: 1, shadows: false }, // 0 最省：低分屏 + 无阴影
+  { dpr: 1.25, shadows: false }, // 1 起步档
+  { dpr: MAX_DPR, shadows: false }, // 2 满分辨率
+  { dpr: MAX_DPR, shadows: true }, // 3 全开：分辨率满 + 主光自身阴影
+] as const
+const START_LEVEL = 1
 
 /** 灯光强度：半球环境光（压得很低，主要靠环境立方图和主光塑形）、主光（右前上）、补光（左前）、轮廓光（后上） */
 const HEMI = 0.25
@@ -89,18 +102,15 @@ type Props = {
 
 export default function AvatarScene({ scrollProgress, pointer, reducedMotion, paused, onReady }: Props) {
   const drag = useRef<DragState>({ x: 0, y: 0, active: false })
-  // 弱机器兜底：帧率实在上不来时关掉主光的自身阴影（阴影是整场景的第二遍绘制）
-  const [shadowsOn, setShadowsOn] = useState(true)
-  // 分辨率也用 state 驱动：命令式 setDpr 会被 Canvas 重新应用 dpr 属性盖回去，state 才稳
-  const [dpr, setDpr] = useState(initialDpr)
+  const [level, setLevel] = useState(START_LEVEL)
+  const dpr = LEVELS[level].dpr
+  const shadowsOn = LEVELS[level].shadows
 
   // 给 ?stats=1 的角标看：现在是哪一档画质
   useEffect(() => {
     document.documentElement.dataset.avatarShadows = shadowsOn ? '1' : '0'
-  }, [shadowsOn])
-  useEffect(() => {
-    document.documentElement.dataset.avatarModel = (MODEL.url.split('/').pop() ?? '').replace('.glb', '')
-  }, [])
+    document.documentElement.dataset.avatarLevel = String(level)
+  }, [shadowsOn, level])
 
   return (
     <Canvas
@@ -144,56 +154,51 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, pa
       <directionalLight position={[-4, 1.5, 3]} intensity={FILL} color="#f4f6fa" />
       <directionalLight position={[-1.5, 2.6, -3.5]} intensity={RIM} color="#ffffff" />
       <Suspense fallback={null}>
-        <AdaptiveDpr
-          reducedMotion={reducedMotion}
-          onDpr={setDpr}
-          onSlow={() => setShadowsOn(false)}
-        />
+        <AdaptiveQuality reducedMotion={reducedMotion} level={level} onLevel={setLevel} />
         <Rig scrollProgress={scrollProgress} reducedMotion={reducedMotion} drag={drag}>
-          <GltfAvatar url={MODEL.url} reducedMotion={reducedMotion} pointer={pointer} drag={drag} />
+          <ProgressiveAvatar reducedMotion={reducedMotion} pointer={pointer} drag={drag} />
         </Rig>
       </Suspense>
     </Canvas>
   )
 }
 
-/** 帧率兜底，分两档：
-    1. 头几秒量真实帧时间，吃不消就把渲染分辨率降一档（1.5 → 1.25 → 1.0）；
-    2. 降到 1.0 还是慢，就关掉主光阴影（整场景的第二遍绘制）。
-    分辨率走 state（onDpr → Canvas 的 dpr 属性），不用命令式 setDpr：后者会被 Canvas 重渲染时
-    重新应用 dpr 属性盖回去，实测降下去又被拽回上限。
-    宁可略糊、略平，也不要卡；测完就停手，不再来回抖。 */
-function AdaptiveDpr({
+/** 画质自适应。启动后先跳过 2 秒（加载、入场动画、着色器编译都在这一段，拿它做判断会误判——
+    上一版就是因此在启动时把分辨率误降了一档），然后每 30 帧看一次平均帧时间：
+    · 稳定跑满 vsync（平均 ≤18.5ms）→ 升一档
+    · 掉到 38fps 以下（>26ms）→ 降一档
+    · 两者之间 → 保持
+    每次升降后重新等 2 秒再量（避免把切换的抖动算进去），最多移动 4 次就停手。 */
+function AdaptiveQuality({
   reducedMotion,
-  onDpr,
-  onSlow,
+  level,
+  onLevel,
 }: {
   reducedMotion: boolean
-  onDpr: (dpr: number) => void
-  onSlow: () => void
+  level: number
+  onLevel: (n: number) => void
 }) {
-  const gl = useThree((s) => s.gl)
-  const st = useRef({ n: 0, sum: 0, done: false })
+  const st = useRef({ n: 0, sum: 0, warm: 0, moves: 0 })
 
   useFrame((_, delta) => {
     const s = st.current
-    if (s.done || reducedMotion) return
+    if (reducedMotion || s.moves >= 4) return
+    s.warm += delta
+    if (s.warm < 2) return
     s.n++
     s.sum += delta
-    if (s.n < 40) return
+    if (s.n < 30) return
     const avg = s.sum / s.n
     s.n = 0
     s.sum = 0
-    const cur = gl.getPixelRatio()
-    if (avg > 0.021 && cur > 1.001) {
-      onDpr(Math.max(1, cur - 0.25))
-    } else if (avg > 0.033) {
-      onSlow() // 已经是最低分辨率还慢：牺牲阴影
-      s.done = true
-    } else if (avg < 0.0105 && cur < MAX_DPR - 0.001) {
-      onDpr(Math.min(MAX_DPR, cur + 0.25))
-    } else {
-      s.done = true // 已经稳了
+    if (avg <= 0.0185 && level < LEVELS.length - 1) {
+      onLevel(level + 1)
+      s.moves++
+      s.warm = 0
+    } else if (avg > 0.026 && level > 0) {
+      onLevel(level - 1)
+      s.moves++
+      s.warm = 0
     }
   })
   return null
@@ -401,6 +406,38 @@ function captureRig(scene: THREE.Object3D): Rigging {
 }
 
 type GestureKind = 'nod' | 'waveL' | 'waveR'
+
+/** 渐进加载：先挂 4 万面的小样（几百 KB，先有人），全尺寸在后台下完再换。
+    两个模型的骨骼/尺度/静止姿势一致，替换时不会跳。 */
+function ProgressiveAvatar(props: {
+  reducedMotion: boolean
+  pointer: React.RefObject<Pointer>
+  drag: React.RefObject<DragState>
+}) {
+  const [full, setFull] = useState(false)
+  // 给 ?stats=1 的角标看：现在画的是小样还是全尺寸
+  useEffect(() => {
+    document.documentElement.dataset.avatarModel = full ? 'full' : 'lite'
+  }, [full])
+  return (
+    <>
+      {!full && <GltfAvatar url={MODEL.lite} {...props} />}
+      <Suspense fallback={null}>
+        <LoadFull onReady={() => setFull(true)} />
+      </Suspense>
+      {full && <GltfAvatar url={MODEL.url} {...props} />}
+    </>
+  )
+}
+
+/** 只负责把全尺寸模型下载+解析完，然后通知父组件替换。自己不画任何东西。 */
+function LoadFull({ onReady }: { onReady: () => void }) {
+  useGLTF(MODEL.url) // 解析完成前会挂起（下载进度交给浏览器）
+  useEffect(() => {
+    onReady()
+  }, [onReady])
+  return null
+}
 
 function GltfAvatar({
   url,

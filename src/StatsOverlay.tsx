@@ -11,6 +11,7 @@ type Info = {
   cssH: number
   gpu: string
   shadows: string
+  level: string
   model: string
 }
 
@@ -57,6 +58,7 @@ export default function StatsOverlay() {
           cssH: rect ? Math.round(rect.height) : 0,
           gpu,
           shadows: document.documentElement.dataset.avatarShadows ?? '?',
+          level: document.documentElement.dataset.avatarLevel ?? '?',
           model: document.documentElement.dataset.avatarModel ?? '?',
         })
       }
@@ -86,7 +88,7 @@ export default function StatsOverlay() {
     >
       {`${info.fps} fps  (p95 ${info.slow}ms)\n`}
       {`渲染分辨率 ×${info.dpr}  ·  画布 ${info.cssW}×${info.cssH} CSS\n`}
-      {`阴影 ${info.shadows === '1' ? '开' : '关'}  ·  模型 ${info.model}\n`}
+      {`阴影 ${info.shadows === '1' ? '开' : '关'}  ·  档位 ${info.level}  ·  模型 ${info.model}\n`}
       {`GPU ${info.gpu}`}
     </div>
   )

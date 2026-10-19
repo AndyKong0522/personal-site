@@ -1,0 +1,227 @@
+{
+  "_comment": "tools/tripo-vcol.py config for the LOW-POLY placeholder (avatar-lite.glb). Derived from tripo-n2.json: the 40k mesh is too coarse for the per-vertex cavity to read as shading (it turns into speckle), so the hair/jacket strengths are toned down and the hair is matte.",
+  "materials": {
+    "cloth": {
+      "rough": 0.96
+    },
+    "skin": {
+      "rough": 0.74
+    },
+    "hair": {
+      "rough": 0.82
+    },
+    "brow": {
+      "rough": 0.7
+    },
+    "shoe": {
+      "rough": 0.55
+    },
+    "glasses": {
+      "rough": 0.18
+    },
+    "eye": {
+      "rough": 0.7
+    }
+  },
+  "cavity": {
+    "default": 0.25,
+    "hair": 0.45,
+    "brow": 0.5,
+    "jacket": 0.3,
+    "hoodie": 0.4,
+    "pants": 0.3,
+    "glasses": 0.2,
+    "shoe": 0.3,
+    "lace": 0.2,
+    "skin": 0.22,
+    "eye": 0.0
+  },
+  "thin": {
+    "parts": [
+      20,
+      26
+    ],
+    "strength": 0.3,
+    "iterations": 1
+  },
+  "categories": {
+    "shoe": {
+      "rgb": [
+        238,
+        236,
+        232
+      ],
+      "parts": [
+        7,
+        8
+      ],
+      "mat": "shoe"
+    },
+    "lace": {
+      "rgb": [
+        226,
+        224,
+        220
+      ],
+      "parts": [
+        73
+      ],
+      "mat": "cloth"
+    },
+    "pants": {
+      "rgb": [
+        88,
+        84,
+        90
+      ],
+      "parts": [
+        3,
+        9,
+        11
+      ],
+      "mat": "cloth"
+    },
+    "skin": {
+      "rgb": [
+        243,
+        196,
+        168
+      ],
+      "parts": [
+        4,
+        14,
+        16,
+        45,
+        46,
+        34,
+        35,
+        54
+      ],
+      "mat": "skin"
+    },
+    "jacket": {
+      "rgb": [
+        184,
+        148,
+        108
+      ],
+      "parts": [
+        0,
+        2,
+        5,
+        6,
+        12,
+        15,
+        23,
+        37
+      ],
+      "mat": "cloth"
+    },
+    "hoodie": {
+      "rgb": [
+        150,
+        148,
+        150
+      ],
+      "parts": [
+        1
+      ],
+      "mat": "cloth"
+    },
+    "string": {
+      "rgb": [
+        172,
+        168,
+        166
+      ],
+      "parts": [
+        66,
+        69
+      ],
+      "mat": "cloth"
+    },
+    "glasses": {
+      "rgb": [
+        24,
+        24,
+        24
+      ],
+      "parts": [
+        20,
+        26
+      ],
+      "mat": "glasses"
+    },
+    "brow": {
+      "rgb": [
+        58,
+        44,
+        38
+      ],
+      "parts": [
+        67,
+        71
+      ],
+      "mat": "brow"
+    },
+    "eye": {
+      "rgb": [
+        248,
+        246,
+        243
+      ],
+      "parts": [
+        41,
+        49
+      ],
+      "mat": "eye"
+    },
+    "hair": {
+      "rgb": [
+        56,
+        49,
+        48
+      ],
+      "parts": "*",
+      "mat": "hair"
+    }
+  },
+  "eyes": [
+    {
+      "part": 41,
+      "iris": [
+        -0.0462,
+        0.7728,
+        0.0192
+      ]
+    },
+    {
+      "part": 49,
+      "iris": [
+        0.0433,
+        0.7728,
+        0.0192
+      ]
+    }
+  ],
+  "face": {
+    "part": 4,
+    "cheeks": [
+      [
+        -0.0677,
+        0.7177
+      ],
+      [
+        0.0677,
+        0.7177
+      ]
+    ],
+    "mouth": [
+      0.0,
+      0.6986,
+      0.032
+    ],
+    "smile": 4.6
+  },
+  "override": {}
+}

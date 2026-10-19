@@ -47,7 +47,8 @@ export default function App() {
       const link = document.createElement('link')
       link.rel = 'preload'
       link.as = 'fetch'
-      link.href = '/models/avatar.glb'
+      // 先预载小样（几百 KB，决定"人什么时候出现"），全尺寸由场景挂载后再下
+      link.href = '/models/avatar-lite.glb'
       link.crossOrigin = 'anonymous'
       document.head.appendChild(link)
       setUse3D(true)
