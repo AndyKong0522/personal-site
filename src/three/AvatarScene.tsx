@@ -27,9 +27,11 @@ const MODEL = {
 const AVATAR_HEIGHT = 1.24
 /** 可见高度 = 2·z·tan(fov/2) = 1.32，上下各留约 7% 余量，鞋底不会被画布下沿切掉。 */
 const CAMERA_Z = 2.16
-/** 渲染分辨率上限。2.0 在 4K / 高分屏上等于四倍像素量，人像本身不需要那么细；
-    帧率不够时 AdaptiveDpr 会再往下调。 */
-const MAX_DPR = 1.5
+/** 渲染分辨率上限：跟随屏幕像素比，最多 2。
+    之前硬编码 1.5 —— 在 2 倍屏上等于只画 75% 的像素再让浏览器放大，人像越大越糊
+    （用户反馈画质糊就是这个：画布放大到 90svh 以后更明显）。
+    真跑不动时画质阶梯会自己往下退，所以这里按屏幕给足。 */
+const MAX_DPR = Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1, 2)
 /** 画质阶梯。从中间一档起步（快、但不至于糊），之后按实测帧时间上下移动：
     能稳定跑满 vsync 就往上升，掉到 38fps 以下就往下降。
     分辨率走 state（Canvas 的 dpr 属性），不用命令式 setDpr：后者会被重渲染时重新应用的
@@ -37,7 +39,7 @@ const MAX_DPR = 1.5
 const LEVELS = [
   { dpr: 1, shadows: false }, // 0 最省：低分屏 + 无阴影
   { dpr: 1.25, shadows: false }, // 1
-  { dpr: MAX_DPR, shadows: false }, // 2 满分辨率
+  { dpr: Math.min(1.5, MAX_DPR), shadows: false }, // 2 接近满分辨率
   { dpr: MAX_DPR, shadows: true }, // 3 全开：分辨率满 + 主光自身阴影
 ] as const
 
