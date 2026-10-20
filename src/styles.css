@@ -201,7 +201,8 @@ a {
 }
 .avatar-hint {
   position: absolute;
-  bottom: 12%;
+  /* 3D 加载中的提示：放头顶上方那片空白，别压在鞋上 */
+  top: 6rem;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
