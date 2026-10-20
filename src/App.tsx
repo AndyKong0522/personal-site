@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import { content, DISPLAY_LINES, EMAIL, type Lang } from './content'
-import { canRender3D, prefersReducedMotion, slowNetwork } from './capabilities'
+import { hero3DMode, prefersReducedMotion, remember3D, type Hero3DMode } from './capabilities'
 import StatsOverlay from './StatsOverlay'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -20,7 +20,11 @@ function initialLang(): Lang {
 export default function App() {
   const [lang, setLang] = useState<Lang>(initialLang)
   const [reducedMotion] = useState(prefersReducedMotion)
-  const [use3D, setUse3D] = useState(false)
+  // 首屏策略：能自动就自动（点过 / 线路够快），否则只给静图 + 一个按钮
+  const [mode] = useState<Hero3DMode>(() =>
+    new URLSearchParams(location.search).has('static') ? 'none' : hero3DMode(),
+  )
+  const [use3D, setUse3D] = useState(mode === 'auto')
   const [sceneReady, setSceneReady] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [active, setActive] = useState(0)
@@ -37,19 +41,21 @@ export default function App() {
     localStorage.setItem('lang', lang)
   }, [lang])
 
-  // 首屏渲染完就尽快加载 3D。
+  // 首屏策略在 hero3DMode() 里决定；auto 模式下 use3D 初值就是 true，
+  // 第一帧就挂 Canvas，让代码包和模型尽早开始下载（两者都已在 index.html 预载）。
+  // 想要"只给静图"的验收路径：?static=1；强制加载 3D：?force3d=1。
   useEffect(() => {
-    // 慢网/省流量：不加载 three.js 和模型，直接用静态渲染图（66 KB）
-    // ?static=1 可以强制走这条路，方便本地验收
-    if (!canRender3D() || slowNetwork() || new URLSearchParams(location.search).has('static')) return
-    const start = () => setUse3D(true)
-    if ('requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(start, { timeout: 300 })
-      return () => window.cancelIdleCallback(id)
+    const params = new URLSearchParams(location.search)
+    if (params.has('force3d')) {
+      remember3D()
+      setUse3D(true)
     }
-    const id = setTimeout(start, 120)
-    return () => clearTimeout(id)
   }, [])
+
+  const enable3D = () => {
+    remember3D()
+    setUse3D(true)
+  }
 
   // 静图先出现，3D 通常一两秒后淡入；慢网可能要十几秒，超过 1.5 秒还没就绪就给一句提示
   useEffect(() => {
@@ -203,6 +209,12 @@ export default function App() {
               height={935}
               decoding="async"
             />
+            {mode === 'offer' && !use3D && (
+              <button type="button" className="avatar-cta" onClick={enable3D}>
+                <span className="avatar-cta-dot" aria-hidden="true" />
+                {lang === 'zh' ? '让我动起来' : 'Bring me to life'}
+              </button>
+            )}
             {showHint && (
               <p className="avatar-hint" aria-live="polite">
                 {lang === 'zh' ? '3D 正在加载…' : 'Loading 3D…'}
