@@ -184,10 +184,6 @@ export default function App() {
             </a>
           ))}
         </nav>
-        <a className="header-cv" href={CV_PATH} download>
-          CV
-          <span aria-hidden="true">↓</span>
-        </a>
         <button
           className="lang-toggle"
           type="button"
@@ -240,8 +236,8 @@ export default function App() {
           <div className="hero-inner">
             <div className="hero-left">
               <p className="eyebrow">{t.hero.eyebrow}</p>
-              <p className="display">
-                {DISPLAY_LINES.map((line) => (
+              <p className={`display${lang === 'zh' ? ' is-cjk' : ''}`}>
+                {DISPLAY_LINES[lang].map((line) => (
                   <span key={line}>{line}</span>
                 ))}
               </p>
@@ -250,19 +246,22 @@ export default function App() {
 
             <div className="hero-right">
               <div className="hero-id">
-                <span className="hero-id-latin">{t.hero.nameEn || t.hero.name}</span>
-                {t.hero.nameEn ? <span className="hero-id-zh">{t.hero.name}</span> : null}
-                <span className="hero-id-alt">{t.hero.nameAlt}</span>
+                {lang === 'zh' ? (
+                  <>
+                    <span className="hero-id-name">{t.hero.name}</span>
+                    <span className="hero-id-sub">{t.hero.nameEn}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hero-id-latin">{t.hero.name}</span>
+                    {t.hero.nameAlt ? <span className="hero-id-alt">{t.hero.nameAlt}</span> : null}
+                  </>
+                )}
               </div>
               <div className="hero-links">
-                <a className="btn btn-solid" href={CV_PATH} download>
-                  {t.hero.cvLabel}
-                  <span className="btn-note">{t.hero.cvNote}</span>
-                </a>
                 <a className="hero-mail" href={`mailto:${EMAIL}`}>
                   {EMAIL}
                 </a>
-                <p className="hero-stack">{t.hero.stack}</p>
               </div>
             </div>
 
@@ -291,7 +290,7 @@ export default function App() {
               <p className="about-note">
                 {t.about.note}{' '}
                 <a href={CV_PATH} download>
-                  {t.hero.cvLabel}
+                  {t.cv.downloadLabel}
                 </a>
               </p>
             </div>
@@ -367,6 +366,10 @@ export default function App() {
                   {t.cv.downloadLabel}
                   <span className="btn-note">{t.cv.downloadMeta}</span>
                 </a>
+                <a className="btn-link" href={CV_PATH} target="_blank" rel="noopener noreferrer">
+                  {t.cv.viewLabel}
+                  <span aria-hidden="true">↗</span>
+                </a>
               </div>
               <h3 className="micro-title">{t.cv.factsTitle}</h3>
               <dl className="cv-facts">
@@ -394,7 +397,7 @@ export default function App() {
             <dl className="contact-list reveal">
               <dt>{t.contact.linksTitle}</dt>
               <dd className="pending">
-                LinkedIn · GitHub
+                {t.contact.linksPending}
                 <span className="pending-note">{lang === 'zh' ? '待补充' : 'to be added'}</span>
               </dd>
             </dl>

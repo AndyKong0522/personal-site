@@ -21,6 +21,8 @@
   --line: rgba(27, 25, 23, 0.14);
   --shadow: rgba(27, 25, 23, 0.08);
   --font-display: 'Anton Display', 'Arial Narrow', Impact, 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  /* 汉字展示字：Anton 只有拉丁字形，中文得走系统黑体 */
+  --font-cjk-display: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Source Han Sans SC', 'Hiragino Sans GB', sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --pad-x: clamp(1.25rem, 4vw, 3.5rem);
   --max: 1120px;
@@ -132,25 +134,6 @@ a {
   bottom: 0;
   height: 1px;
   background: var(--fg);
-}
-/* CV 常驻入口：招聘方和导师随时能拿到，不用滚到底 */
-.header-cv {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-decoration: none;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-}
-.header-cv:hover {
-  border-color: var(--fg);
-  background: var(--fg);
-  color: var(--bg);
 }
 .lang-toggle {
   border: 1px solid var(--line);
@@ -311,18 +294,32 @@ a {
   text-transform: uppercase;
   color: var(--muted);
 }
-/* 展示字：造 / 量 / 证 */
+/* 展示字：造 / 量 / 证（中文）/ BUILD · MEASURE · PROVE（英文）。
+   上面压一条细线，行距放开，别让三行撞在一起。 */
 .display {
-  margin: 0 0 1.6rem;
+  width: fit-content;
+  margin: 0 0 1.5rem;
+  padding-top: 1.1rem;
+  padding-right: 2.6rem;
+  border-top: 1px solid var(--line);
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(2.6rem, 6.6vw, 5.8rem);
-  line-height: 0.86;
+  font-size: clamp(1.9rem, 4.2vw, 3.5rem);
+  line-height: 1.08;
   text-transform: uppercase;
-  letter-spacing: 0.005em;
+  letter-spacing: 0.012em;
 }
 .display span {
   display: block;
+}
+/* 汉字版：系统黑体加粗，字号更大一点才压得住人像 */
+.display.is-cjk {
+  font-family: var(--font-cjk-display);
+  font-weight: 800;
+  font-size: clamp(2.3rem, 5vw, 4.2rem);
+  line-height: 1.16;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 .hero-lead {
   margin: 0;
@@ -348,6 +345,20 @@ a {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+/* 中文界面：汉字名当主标，拉丁名退成一行小字（论文署名用，去掉就搜不到人） */
+.hero-id-name {
+  font-family: var(--font-cjk-display);
+  font-size: clamp(1.45rem, 2.4vw, 2.05rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+}
+.hero-id-sub {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 .hero-id-alt {
   font-size: 0.76rem;
@@ -412,14 +423,23 @@ a {
   outline: 2px solid var(--fg);
   outline-offset: 3px;
 }
-.hero-stack {
-  margin: 0.4rem 0 0;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.72rem;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
-  color: var(--muted);
+/* "在线查看完整简历"：次一级的文字链，不做成第二个按钮 */
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--fg);
+  text-decoration: none;
+  border-bottom: 1px solid var(--fg);
+  padding-bottom: 0.12rem;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.btn-link:hover {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: transparent;
 }
 
 /* 首屏居中底部那行小字：怎么和人像互动 */
@@ -679,6 +699,13 @@ a {
   border: 1px solid var(--fg);
   background: var(--card);
 }
+/* 下载 + 在线查看，两个入口并排 */
+.cv-download {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1.3rem;
+}
 .cv-facts {
   display: grid;
   gap: 0.9rem;
@@ -808,7 +835,7 @@ a {
   .site-header nav {
     display: none;
   }
-  .header-cv {
+  .lang-toggle {
     margin-left: auto;
   }
   .hero {
