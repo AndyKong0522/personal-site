@@ -22,6 +22,7 @@ export default function App() {
   const [reducedMotion] = useState(prefersReducedMotion)
   const [use3D, setUse3D] = useState(false)
   const [sceneReady, setSceneReady] = useState(false)
+  const [showHint, setShowHint] = useState(false)
   const [active, setActive] = useState(0)
   const [heroVisible, setHeroVisible] = useState(true)
   const scrollProgress = useRef(0)
@@ -49,6 +50,16 @@ export default function App() {
     const id = setTimeout(start, 120)
     return () => clearTimeout(id)
   }, [])
+
+  // 静图先出现，3D 通常一两秒后淡入；慢网可能要十几秒，超过 1.5 秒还没就绪就给一句提示
+  useEffect(() => {
+    if (!use3D || sceneReady) {
+      setShowHint(false)
+      return
+    }
+    const id = setTimeout(() => setShowHint(true), 1500)
+    return () => clearTimeout(id)
+  }, [use3D, sceneReady])
 
   // 光标位置（-1~1），供 3D 转头。不经过 React state，避免每帧重渲染。
   useEffect(() => {
@@ -192,6 +203,11 @@ export default function App() {
               height={935}
               decoding="async"
             />
+            {showHint && (
+              <p className="avatar-hint" aria-live="polite">
+                {lang === 'zh' ? '3D 正在加载…' : 'Loading 3D…'}
+              </p>
+            )}
             {use3D && (
               <Suspense fallback={null}>
                 <div className={`avatar-canvas${sceneReady ? ' is-visible' : ''}`}>

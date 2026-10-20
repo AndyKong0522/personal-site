@@ -29,17 +29,16 @@ export function canRender3D(): boolean {
   return supportsWebGL() && !isLowEndDevice()
 }
 
-/** 网络慢到不值得为 3D 付 ~1.9 MB 时返回 true（2G/3G、省流量模式）。
-    这种情况直接显示静态渲染图（public/avatar-portrait.webp，从画布导出的同一套打光），
-    首屏要传的字节从约 1.9 MB 降到 66 KB。 */
+/** 只认**明确的**省流量信号：saveData（用户自己开的）或 slow-2g。
+    不要用 effectiveType === '3g' 来判断：那是浏览器根据近期流量估的，同一台机器会在 4g/3g 之间跳
+    （实测同一网络下先报 4g、几秒后报 3g），拿它决定"不加载 3D"会让线上时好时坏。
+    真正的慢网保护靠的是别的地方：静图占位 66 KB、模型/代码包并行预载、模型压到 1.2 MB。 */
 export function slowNetwork(): boolean {
   const connection = (
     navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
   ).connection
   if (!connection) return false
-  if (connection.saveData) return true
-  const et = connection.effectiveType
-  return et === 'slow-2g' || et === '2g' || et === '3g'
+  return connection.saveData === true || connection.effectiveType === 'slow-2g'
 }
 
 
