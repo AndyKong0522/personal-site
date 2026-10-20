@@ -128,15 +128,21 @@ export default function App() {
     gsap.ticker.lagSmoothing(0)
 
     const ctx = gsap.context(() => {
-      // 首页右列人像随滚动淡出、上移（视差）。文案列单独走。
-      gsap.to('.hero-figure', {
-        yPercent: -16,
+      // 首屏：人像和两列文字随滚动淡出、错位（人像走得比文字快一点）
+      gsap.to('.hero-stage', {
+        yPercent: -14,
         opacity: 0.12,
         ease: 'none',
         scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
       })
-      gsap.to('.hero-copy', {
+      gsap.to('.hero-left', {
         yPercent: -8,
+        opacity: 0,
+        ease: 'none',
+        scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
+      })
+      gsap.to('.hero-right', {
+        yPercent: -4,
         opacity: 0,
         ease: 'none',
         scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
@@ -150,14 +156,6 @@ export default function App() {
           ease: 'power2.out',
           scrollTrigger: { trigger: el, start: 'top 90%' },
         })
-      })
-      // 展示字随滚动横向错位，制造一点点速度差。
-      gsap.from('.display-band span', {
-        xPercent: -4,
-        opacity: 0.2,
-        stagger: 0.08,
-        ease: 'none',
-        scrollTrigger: { trigger: '.display-band', start: 'top 92%', end: 'bottom 40%', scrub: true },
       })
     }, rootRef)
 
@@ -202,87 +200,75 @@ export default function App() {
 
       <main id="main">
         <section className="hero" id="top">
+          {/* 头像居中：绝对定位铺满首屏，两列文字压在它上面。
+              文字层不接指针事件，人物照样能悬停和拖动。 */}
+          <div className="hero-stage" ref={stageRef}>
+            <img
+              className={`avatar-fallback${sceneReady ? ' is-hidden' : ''}`}
+              src="/avatar-portrait.webp"
+              alt={t.a11y.avatarAlt}
+              width={420}
+              height={935}
+              decoding="async"
+            />
+            {mode === 'offer' && !use3D && (
+              <button type="button" className="avatar-cta" onClick={enable3D}>
+                <span className="avatar-cta-dot" aria-hidden="true" />
+                {lang === 'zh' ? '让我动起来' : 'Bring me to life'}
+              </button>
+            )}
+            {showHint && (
+              <p className="avatar-hint" aria-live="polite">
+                {lang === 'zh' ? '3D 正在加载…' : 'Loading 3D…'}
+              </p>
+            )}
+            {use3D && (
+              <Suspense fallback={null}>
+                <div className={`avatar-canvas${sceneReady ? ' is-visible' : ''}`}>
+                  <AvatarScene
+                    scrollProgress={scrollProgress}
+                    pointer={pointer}
+                    reducedMotion={reducedMotion}
+                    paused={!heroVisible}
+                    onReady={() => setSceneReady(true)}
+                  />
+                </div>
+              </Suspense>
+            )}
+          </div>
+
           <div className="hero-inner">
-            {/* 左列：先给信息。招聘方 / 导师 30 秒内要能拿到"在做什么、在找什么、怎么联系" */}
-            <div className="hero-copy">
+            <div className="hero-left">
               <p className="eyebrow">{t.hero.eyebrow}</p>
-              <h1 className={`hero-name${lang === 'en' ? ' is-latin' : ''}`}>
-                <span className="hero-name-main">{t.hero.name}</span>
-                {t.hero.nameEn ? <span className="hero-name-en">{t.hero.nameEn}</span> : null}
-                <span className="hero-name-alt">{t.hero.nameAlt}</span>
-              </h1>
-              <p className="hero-role-line">{t.hero.roleLine}</p>
+              <p className="display">
+                {DISPLAY_LINES.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </p>
               <p className="hero-lead">{t.hero.lead}</p>
+            </div>
 
-              <div className="hero-seeking">
-                <p className="seeking-label">{t.hero.lookingFor.title}</p>
-                <ul>
-                  {t.hero.lookingFor.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
+            <div className="hero-right">
+              <div className="hero-id">
+                <span className="hero-id-latin">{t.hero.nameEn || t.hero.name}</span>
+                {t.hero.nameEn ? <span className="hero-id-zh">{t.hero.name}</span> : null}
+                <span className="hero-id-alt">{t.hero.nameAlt}</span>
               </div>
-
-              <div className="hero-actions">
-                <a className="btn btn-outline" href={CV_PATH} download>
+              <div className="hero-links">
+                <a className="btn btn-solid" href={CV_PATH} download>
                   {t.hero.cvLabel}
                   <span className="btn-note">{t.hero.cvNote}</span>
                 </a>
-                <a className="btn btn-solid" href={`mailto:${EMAIL}`}>
+                <a className="hero-mail" href={`mailto:${EMAIL}`}>
                   {EMAIL}
                 </a>
+                <p className="hero-stack">{t.hero.stack}</p>
               </div>
-
-              <p className="hero-stack">{t.hero.stack}</p>
             </div>
 
-            {/* 右列：头像。3D / 静图 / 占位插画三态不变，尺寸由 --avatar-w/--avatar-h 统一控制 */}
-            <div className="hero-figure">
-              <div className="hero-stage" ref={stageRef}>
-                <img
-                  className={`avatar-fallback${sceneReady ? ' is-hidden' : ''}`}
-                  src="/avatar-portrait.webp"
-                  alt={t.a11y.avatarAlt}
-                  width={420}
-                  height={935}
-                  decoding="async"
-                />
-                {mode === 'offer' && !use3D && (
-                  <button type="button" className="avatar-cta" onClick={enable3D}>
-                    <span className="avatar-cta-dot" aria-hidden="true" />
-                    {lang === 'zh' ? '让我动起来' : 'Bring me to life'}
-                  </button>
-                )}
-                {showHint && (
-                  <p className="avatar-hint" aria-live="polite">
-                    {lang === 'zh' ? '3D 正在加载…' : 'Loading 3D…'}
-                  </p>
-                )}
-                {use3D && (
-                  <Suspense fallback={null}>
-                    <div className={`avatar-canvas${sceneReady ? ' is-visible' : ''}`}>
-                      <AvatarScene
-                        scrollProgress={scrollProgress}
-                        pointer={pointer}
-                        reducedMotion={reducedMotion}
-                        paused={!heroVisible}
-                        onReady={() => setSceneReady(true)}
-                      />
-                    </div>
-                  </Suspense>
-                )}
-              </div>
-              <p className="mouse-hint">{t.hero.hint}</p>
-            </div>
+            <p className="mouse-hint">{t.hero.hint}</p>
           </div>
         </section>
-
-        {/* 展示字：造 / 量 / 证。三个动词就是下面三节的引子。 */}
-        <p className="display-band" aria-hidden="true">
-          {DISPLAY_LINES.map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-        </p>
 
         <section className="section" id="about">
           <header className="section-rail">

@@ -48,15 +48,7 @@ export const content = {
       name: '拱慧鹏',
       nameEn: 'Huipeng Gong',
       nameAlt: 'Andy Kong',
-      roleLine: '做 AI 系统，也做判断它到底好不好用的评测。',
       lead: 'agent 编排、检索、数据管线，然后是更在意的那一半：评测集、基线对照、拒答。一个系统说"不知道"的时候，它是不是真的不知道——这件事可以测。',
-      lookingFor: {
-        title: '在找',
-        items: [
-          'Agent / LLM 应用开发岗（上海或远程）',
-          'AI 与社会 / 计算社科方向的全奖博士（2027 入学）',
-        ],
-      },
       cvLabel: 'CV (PDF)',
       cvNote: '一页 · 英文',
       stack: 'Python · LangGraph / ReAct · RAG · 评测集 · SEM (R) · MySQL',
@@ -185,15 +177,7 @@ export const content = {
       name: 'Huipeng Gong',
       nameEn: '',
       nameAlt: 'Andy Kong',
-      roleLine: 'I build AI systems, and the evaluation that says whether they work.',
       lead: 'Agent orchestration, retrieval, data pipelines — then the half I care about more: evaluation sets, baselines, refusal. When a system says "I don\'t know", is it actually uncertain? That part is measurable.',
-      lookingFor: {
-        title: 'Looking for',
-        items: [
-          'Agent / LLM application engineering roles (Shanghai or remote)',
-          'Funded PhD positions in AI & society or computational social science, 2027 intake',
-        ],
-      },
       cvLabel: 'CV (PDF)',
       cvNote: 'one page · English',
       stack: 'Python · LangGraph / ReAct · RAG · Evaluation · SEM (R) · MySQL',
