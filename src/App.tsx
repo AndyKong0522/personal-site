@@ -3,25 +3,13 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import { content, DISPLAY_LINES, EMAIL, type Lang } from './content'
-import { canRender3D, isLowEndDevice, prefersReducedMotion } from './capabilities'
-import { AVATAR_MODEL } from './models'
+import { canRender3D, prefersReducedMotion, slowNetwork } from './capabilities'
 import StatsOverlay from './StatsOverlay'
 
 gsap.registerPlugin(ScrollTrigger)
 
 // three.js 体积大，单独拆包，首屏不阻塞。
 const AvatarScene = lazy(() => import('./three/AvatarScene'))
-
-// 模型预载在**模块求值**时就发起（比等 React 挂载再插 <link> 早 100~200ms），
-// 和 3D 代码包并行下载。省流量/低端设备上不预载。
-if (typeof document !== 'undefined' && !isLowEndDevice()) {
-  const link = document.createElement('link')
-  link.rel = 'preload'
-  link.as = 'fetch'
-  link.href = AVATAR_MODEL.full
-  link.crossOrigin = 'anonymous'
-  document.head.appendChild(link)
-}
 
 function initialLang(): Lang {
   const saved = localStorage.getItem('lang')
@@ -50,7 +38,9 @@ export default function App() {
 
   // 首屏渲染完就尽快加载 3D。
   useEffect(() => {
-    if (!canRender3D()) return
+    // 慢网/省流量：不加载 three.js 和模型，直接用静态渲染图（66 KB）
+    // ?static=1 可以强制走这条路，方便本地验收
+    if (!canRender3D() || slowNetwork() || new URLSearchParams(location.search).has('static')) return
     const start = () => setUse3D(true)
     if ('requestIdleCallback' in window) {
       const id = window.requestIdleCallback(start, { timeout: 300 })
@@ -196,10 +186,11 @@ export default function App() {
           <div className="hero-stage" ref={stageRef}>
             <img
               className={`avatar-fallback${sceneReady ? ' is-hidden' : ''}`}
-              src="/avatar-placeholder.svg"
+              src="/avatar-portrait.webp"
               alt={t.a11y.avatarAlt}
-              width={300}
-              height={400}
+              width={420}
+              height={935}
+              decoding="async"
             />
             {use3D && (
               <Suspense fallback={null}>

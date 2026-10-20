@@ -29,6 +29,20 @@ export function canRender3D(): boolean {
   return supportsWebGL() && !isLowEndDevice()
 }
 
+/** 网络慢到不值得为 3D 付 ~1.9 MB 时返回 true（2G/3G、省流量模式）。
+    这种情况直接显示静态渲染图（public/avatar-portrait.webp，从画布导出的同一套打光），
+    首屏要传的字节从约 1.9 MB 降到 66 KB。 */
+export function slowNetwork(): boolean {
+  const connection = (
+    navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
+  ).connection
+  if (!connection) return false
+  if (connection.saveData) return true
+  const et = connection.effectiveType
+  return et === 'slow-2g' || et === '2g' || et === '3g'
+}
+
+
 /** 显卡档次，用来决定**一开始**就用哪一档画质。
     之前是统一从中间档起步、再靠帧率往上爬，用户实际能看到"先糊 → 变清晰 → 阴影冒出来"
     的跳变（他说模型"一点点加载出来"）。现在按显卡型号直接给起始档：能跑的一上来就满档，

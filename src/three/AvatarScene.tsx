@@ -139,7 +139,13 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, pa
       // PCFSoft 每像素要做十几次阴影采样；PCF 只要 4 次，柔和的观感靠 normalBias 和烘焙 AO 补
       shadows={{ type: THREE.PCFShadowMap }}
       // low-power 会让浏览器优先挑省电显卡（笔记本上就是核显），这里要的是性能
-      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      gl={{
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance',
+        // ?capture=1 时保留绘制缓冲，才能把画布内容（带透明通道）导出成图片做静态占位图
+        preserveDrawingBuffer: DEBUG_PARAMS?.get('capture') === '1',
+      }}
       // 人像滚出视口 / 减少动态效果时用 demand：只在 invalidate 时画一帧
       frameloop={reducedMotion || paused ? 'demand' : 'always'}
       onCreated={({ gl }) => {
@@ -484,6 +490,11 @@ function GltfAvatar({
         // 正面就能直接看到页面背景（模型本身没破，是两片之间本来就没封口）。
         // 布料改双面渲染后，错开时看到的是袖子内壁/衣身内侧，不再是一个透光的洞。
         if (mat.name === 'cloth') mat.side = THREE.DoubleSide
+        // 调试：?nomap=1 去掉法线贴图，用来判断这张贴图值不值它的字节数
+        if (DEBUG_PARAMS?.get('nomap')) {
+          mat.normalMap = null
+          mat.needsUpdate = true
+        }
         // 镜框贴着颧骨，它投在脸上的细影在阴影贴图里必然锯齿化（表现为"撕纸边"），干脆不投
         if (mat.name === 'glasses') mesh.castShadow = false
       }
