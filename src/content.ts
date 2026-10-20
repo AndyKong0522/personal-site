@@ -1,142 +1,135 @@
 // 网站文案（中 / 英）。
 //
-// 事实来源：Andy_Work 工作区（cv/master_cv_en.md 的"已确认的事实基线"、
-// applications/、positions/、tracker/README.md）。
-// 规则：只写真实内容；不确定的一律标【待确认】并当面问，不从别的版本照搬。
+// 定位（2026-10-20 本人定）："做 AI 系统 + 做判断它好不好用的评测"，不把自己叫社会学家。
+//   —— 造 / 量 / 证 三条线，对应 Build / Measure / Prove。
+//   —— 写作与研究只在"方法取径"层面描述，不写研究兴趣的具体选题（本人要求：不想被某个方向框住）。
+//
+// 事实来源：E:\Andy_Work\cv\master_cv_en.md 的「已确认的事实基线」、data/profile.md、
+// data/work/phd-applications.md。规则：只写真实内容；不确定的标【待确认】并当面问。
 // 隐私：不放手机号、住址；联系方式只有工作邮箱 + LinkedIn / GitHub。
 
 export type Lang = 'zh' | 'en'
 
-/** 展示标题固定用英文（字体只有拉丁字形；参考图也是英文大字 + 中文小字）。 */
-export const DISPLAY_LINES = ['AI WITH', 'A SOCIAL', 'MIND.'] as const
+/** 展示字固定用英文（Anton 只有拉丁字形）：造 / 量 / 证。 */
+export const DISPLAY_LINES = ['BUILD', 'MEASURE', 'PROVE'] as const
 
 type SectionMeta = { id: string; index: string; nav: string; label: string }
 
 const SECTIONS: Record<Lang, SectionMeta[]> = {
   zh: [
-    { id: 'top', index: '01', nav: '初次见面', label: '初次见面' },
-    { id: 'about', index: '02', nav: '关于', label: '关于我' },
-    { id: 'projects', index: '03', nav: '项目', label: '项目' },
-    { id: 'research', index: '04', nav: '研究', label: '研究' },
-    { id: 'contact', index: '05', nav: '联系', label: '联系' },
+    { id: 'top', index: '01', nav: '首页', label: '拱慧鹏' },
+    { id: 'about', index: '02', nav: '关于', label: '我做的事' },
+    { id: 'work', index: '03', nav: '工作', label: '做过的' },
+    { id: 'research', index: '04', nav: '研究', label: '论文与研究' },
+    { id: 'cv', index: '05', nav: 'CV', label: '简历' },
+    { id: 'contact', index: '06', nav: '联系', label: '联系' },
   ],
   en: [
-    { id: 'top', index: '01', nav: 'Intro', label: 'Intro' },
-    { id: 'about', index: '02', nav: 'About', label: 'About' },
-    { id: 'projects', index: '03', nav: 'Projects', label: 'Projects' },
-    { id: 'research', index: '04', nav: 'Research', label: 'Research' },
-    { id: 'contact', index: '05', nav: 'Contact', label: 'Contact' },
+    { id: 'top', index: '01', nav: 'Intro', label: 'Huipeng Gong' },
+    { id: 'about', index: '02', nav: 'About', label: 'What I do' },
+    { id: 'work', index: '03', nav: 'Work', label: 'Selected work' },
+    { id: 'research', index: '04', nav: 'Research', label: 'Writing' },
+    { id: 'cv', index: '05', nav: 'CV', label: 'CV' },
+    { id: 'contact', index: '06', nav: 'Contact', label: 'Contact' },
   ],
 }
 
 export const EMAIL = 'andykong.work@outlook.com'
+
+/** 简历文件放在 public/cv/cv-en.pdf，内容见 data/work/cv-public-en.html（导出源）。 */
+export const CV_PATH = '/cv/cv-en.pdf'
 
 export const content = {
   zh: {
     wordmark: '慧鹏.',
     sections: SECTIONS.zh,
     hero: {
-      eyebrow: '拱慧鹏 / 社会学 × AI',
-      role: 'AI 应用开发工程师',
-      roleSub: '一个好奇的头脑。一个更大的问题。',
-      greeting: '嗨，我是慧鹏。',
-      lead: '把社会学的问题意识，做成能跑的 AI 系统。',
-      cta: '先认识我，再看项目',
-      sideTitle: '数据要有意义。',
-      sideLines: [
-        '我用计算方法研究人和平台如何互相塑造。',
-        '也把模型真正部署进生产系统。',
-        '每种方法都想知道：它为什么成立。',
-      ],
-      blurb: '我关心的是技术背后的社会机制。喜欢拆解问题，也喜欢把答案做成别人能用的东西。',
-      scroll: '向下滚动',
+      eyebrow: 'AI 应用开发工程师 · 华为 · 上海',
+      name: '拱慧鹏',
+      nameEn: 'Huipeng Gong',
+      nameAlt: 'Andy Kong',
+      roleLine: '做 AI 系统，也做判断它到底好不好用的评测。',
+      lead: 'agent 编排、检索、数据管线，然后是更在意的那一半：评测集、基线对照、拒答。一个系统说"不知道"的时候，它是不是真的不知道——这件事可以测。',
+      lookingFor: {
+        title: '在找',
+        items: [
+          'Agent / LLM 应用开发岗（上海或远程）',
+          'AI 与社会 / 计算社科方向的全奖博士（2027 入学）',
+        ],
+      },
+      cvLabel: 'CV (PDF)',
+      cvNote: '一页 · 英文',
+      stack: 'Python · LangGraph / ReAct · RAG · 评测集 · SEM (R) · MySQL',
       hint: '移动鼠标我会看你 · 悬停头部或手试试 · 按住可拖动',
     },
     about: {
-      title: '关于我',
-      eyebrow: '社会学训练 × 工程实践',
-      intro:
-        '社会学训练出身，用计算方法和 AI 做事。杜伦大学社会学硕士（Merit），本科在南通大学读国际经济与贸易。现在在华为做 AI 应用开发，同时独立经营 Droppulses——一个把生成式 AI 与多智能体系统接进真实电商链路的项目。',
-      timelineTitle: '经历',
+      title: '我做的事',
+      eyebrow: '造 / 量 / 证',
+      pillars: [
+        {
+          k: '造',
+          title: 'Build',
+          text: 'agent 编排（ReAct 循环、工具调用）、RAG（混合检索加重排）、数据管线与本地部署。把模型接进真会跑的系统，而不是停在 notebook 里。',
+        },
+        {
+          k: '量',
+          title: 'Measure',
+          text: '评测集、基线对照、拒答与溯源。结论要能绑到证据上：证据不够的时候说"不知道"，这不是保守，是准确。',
+        },
+        {
+          k: '证',
+          title: 'Prove',
+          text: '结构方程模型、中介机制检验、模型分类与人工编码的一致性。先问这个数字测的是什么，再谈它说明什么。',
+        },
+      ],
+      bio: '本科读国际贸易，硕士转社会学（计算方向），毕业后做工程。顺序看着像绕路，凑成的东西不多见：能写爬虫和管线，也知道怎么设计一个可信的测量。现在白天在华为做 AI 应用组件和人机交互评测，业余自己搭小工具。',
+      note: '想细看的话，简历在这里：',
     },
-    timeline: [
-      {
-        time: '2018.09 – 2023.06',
-        title: '南通大学 · 国际经济与贸易 本科',
-        text: 'GPA 85/100。毕业论文用时间序列回归，估计政策不确定性对贸易结构的影响。',
-      },
-      {
-        time: '2020.06 – 2020.09',
-        title: '华泰证券（泰州）· 软件开发实习',
-        text: '用 Python 开发客户风险测评模块，把风险偏好问卷的评分与产品匹配逻辑自动化；另用 Django 搭了一个金融产品信息系统。',
-      },
-      {
-        time: '2021.06 – 2022.01',
-        title: '商汤科技 · 软件开发实习',
-        text: '参与智慧交通系统原型，用 Flask 把交通流量预测模型封装成 RESTful API；另做了一套客户分群与标签看板。',
-      },
-      {
-        time: '2023.09 – 2025.01',
-        title: '杜伦大学 · 社会学硕士（英文授课）',
-        text: 'Merit。硕士论文用 R 做结构方程模型，在全国面板数据（11,644 条观测）上估计家庭与学校资源如何共同、间接地影响学业成就。',
-      },
-      {
-        time: '2024.06 – 2025.03',
-        title: '瓦琉 · 数据分析实习',
-        text: '用 Python 搭社交媒体监听平台，设计 MySQL 架构做多源数据的实时抓取、清洗与分类，并用 NLP 从非结构化文本里提取利益相关方关切与情感指标。',
-      },
-      {
-        time: '2025.06 – 至今',
-        title: 'Droppulses · 创始人',
-        text: '独立开发并运营一套由生成式 AI 与多智能体自主执行任务的系统，自建 API 把大模型服务接进 Shopify 等真实商业平台。',
-      },
-      {
-        time: '2025.10 – 至今',
-        title: '华为 · AI 应用开发工程师',
-        text: '用 Python 和 C++ 开发 AI 应用组件，搭建多模态人机交互的数据管线与评测基准，并把模型能力部署进生产系统。',
-      },
-    ],
-    projects: {
-      title: '项目',
-      intro: '以下都是在做的事，不是设想。',
+    work: {
+      title: '做过的',
+      intro: '能跑起来的，不是设想。',
       items: [
         {
-          name: 'Droppulses',
-          meta: '2025.06 – 至今 · 独立开发与运营',
-          desc: '一套由生成式 AI 和多智能体自主执行任务的系统。自建 API 把大模型服务接进 Shopify 等真实商业平台，完成本地模型部署与生产环境集成，并持续分析交互日志，观察 AI 中介的交流如何影响用户决策。',
-          tags: ['多智能体', 'LLM API', '本地部署', '生产环境'],
-        },
-        {
+          year: '2026',
           name: '博士岗位追踪系统',
-          meta: '2026 · 自用工具',
-          desc: '每天 09:00 自动抓取在招博士岗位，按自定义画像打分筛选，生成可视化面板。抓服务端渲染数据，纯 HTTP、不需要无头浏览器；核心是一套带回归测试（12 条用例）的硬性排除规则，并对通过初筛的岗位再抓详情页复核——因为列表摘要只有几十个字符，真正卡人的要求全写在详情页里。',
-          tags: ['Node.js', '规则引擎', '回归测试', 'Windows 计划任务'],
+          meta: '自用 · 每天 09:00 自动跑',
+          desc: '抓 20 多所欧洲学校的在招岗位，一套硬性排除规则加 12 条回归测试；初筛过的再抓详情页复核——列表摘要只有几十个字，真正卡人的要求全写在详情页里。三周下来，1119 个岗位筛成 44 个。',
+          tags: ['Node.js', '规则引擎', '回归测试'],
         },
         {
+          year: '2025',
+          name: 'Droppulses',
+          meta: '独立开发 · 生成式 AI 与多智能体',
+          desc: '一套由生成式 AI 与多智能体自主执行任务的系统，自建 API 把大模型服务接进 Shopify 等真实商业平台，完成本地模型部署与生产环境集成；同步记录交互日志，观察 AI 中介的交流如何影响用户决策。',
+          tags: ['多智能体', 'LLM API', '生产环境'],
+        },
+        {
+          year: '2024',
           name: '社交媒体监听平台',
-          meta: '2024.06 – 2025.03 · 瓦琉实习期间',
-          desc: '用 Python 实现的自动化监听平台，MySQL 架构支撑多源在线数据的实时抓取、清洗与分类；在其上用 NLP 从大规模非结构化文本中提取利益相关方关切与情感指标，服务于对企业层面的量化分析。',
-          tags: ['Python', 'MySQL', 'NLP', '数据管线'],
+          meta: 'Python · MySQL · NLP',
+          desc: '多源在线数据的实时抓取、清洗与分类，MySQL 架构撑住增量写入；在其上用 NLP 从大规模非结构化文本里提取利益相关方关切与情感指标，服务于对企业层面的量化分析。',
+          tags: ['Python', 'MySQL', 'NLP'],
         },
         {
+          year: '2022',
           name: '大规模网络结构的图神经网络建模',
-          meta: '2022 · CCF 大数据与计算智能大赛 · 9/159',
-          desc: '构建带注意力机制的多尺度图神经网络，在节点、子图和全图三个层面建模复杂网络结构；引入噪声感知的对比模块，动态重加权锚点以降低监督误差的影响；设计多维度消融框架逐项验证，分类准确率相比基线提升 18%。',
-          tags: ['图神经网络', '注意力机制', '消融实验'],
+          meta: 'CCF 大数据与计算智能大赛 · 9/159',
+          desc: '带注意力机制的多尺度 GNN，在节点、子图、全图三个层面建模复杂网络；噪声感知的对比模块动态重加权锚点，降低监督误差的影响；多维度消融逐项验证，分类准确率较基线提升 18%。',
+          tags: ['GNN', '注意力机制', '消融实验'],
         },
       ],
     },
     research: {
-      title: '研究',
-      intro:
-        '关心数字平台上的话语与身份、AI 与大型语言模型的社会后果，以及算法如何进入决策。方法上在计算文本分析与经典社会统计之间来回走。',
-      interestsTitle: '研究兴趣',
-      interests: [
-        '数字平台与在线话语',
-        'AI 与大语言模型的社会研究',
-        '生成式与智能体 AI',
-        '计算社会科学',
-        '算法治理与自动化决策',
+      title: '论文与研究',
+      intro: '方法上在计算文本分析与经典社会统计之间来回走，看问题需要哪个。',
+      methodsTitle: '常用的方法',
+      methods: [
+        '结构方程模型（R）',
+        '中介与调节分析',
+        '计算文本分析（NLP / 主题建模 / 情感分析）',
+        '网络分析（GNN）',
+        '调查设计与信效度检验',
+        '多模态质性编码',
       ],
       worksTitle: '论文与学位论文',
       works: [
@@ -149,15 +142,30 @@ export const content = {
         },
         {
           label: '硕士论文 · 杜伦大学 2025',
-          title: 'Micro-Perspectives on the Educational Achievement of Chinese Students: A Comprehensive Assessment of Family and School',
+          title:
+            'Micro-Perspectives on the Educational Achievement of Chinese Students: A Comprehensive Assessment of Family and School',
           meta: '结构方程模型（R）· 全国面板数据 11,644 条观测',
           desc: '用结构方程模型估计家庭层面与学校层面资源如何共同且间接地影响个体学业成就，把文化资本作为中介机制来检验，而不是假定它成立。',
         },
       ],
     },
+    cv: {
+      title: '简历',
+      intro: '一页，英文。和这个页面同源：上面写过的这里都有，这里没有的不会多说。',
+      downloadLabel: '下载 CV (PDF)',
+      downloadMeta: 'PDF · 一页 · 约 110 KB',
+      factsTitle: '速览',
+      facts: [
+        { k: '现在', v: '华为 · AI 应用开发工程师（2025.10 – 至今）' },
+        { k: '教育', v: '杜伦大学 社会学硕士（计算方向），Merit · 南通大学 国际经济与贸易 学士，85/100' },
+        { k: '方法', v: '结构方程模型 · 中介分析 · 计算文本分析 · 网络分析 · 调查设计 · 评测设计' },
+        { k: '工具', v: 'Python · R · C++ · SQL / MySQL · Git · Linux · SPSS · EViews' },
+        { k: '语言', v: '中文（母语）· 英文（流利，杜伦英文授课硕士）' },
+      ],
+    },
     contact: {
       title: '联系',
-      intro: '欢迎就 AI 应用岗位、博士项目或合作联系我。',
+      intro: '岗位、博士项目、合作，都可以直接发邮件。',
       emailLabel: '邮箱',
       linksTitle: '其他',
     },
@@ -173,107 +181,93 @@ export const content = {
     wordmark: 'Huipeng.',
     sections: SECTIONS.en,
     hero: {
-      eyebrow: 'HUIPENG GONG / SOCIOLOGY & AI',
-      role: 'AI Application Development Engineer',
-      roleSub: 'A curious mind. A larger question.',
-      greeting: "Hi, I'm Huipeng.",
-      lead: 'I turn sociological questions into AI systems that actually run.',
-      cta: 'Meet me first, then the work',
-      sideTitle: 'DATA WITH MEANING.',
-      sideLines: [
-        'I use computational methods to study how people and platforms shape each other.',
-        'I also ship models into production systems.',
-        'And I want to know why each method works.',
-      ],
-      blurb: "I care about the social mechanisms behind the technology. I like taking problems apart, and I like turning the answers into things other people can use.",
-      scroll: 'Scroll to explore',
+      eyebrow: 'AI APPLICATION DEVELOPMENT ENGINEER · HUAWEI · SHANGHAI',
+      name: 'Huipeng Gong',
+      nameEn: '',
+      nameAlt: 'Andy Kong',
+      roleLine: 'I build AI systems, and the evaluation that says whether they work.',
+      lead: 'Agent orchestration, retrieval, data pipelines — then the half I care about more: evaluation sets, baselines, refusal. When a system says "I don\'t know", is it actually uncertain? That part is measurable.',
+      lookingFor: {
+        title: 'Looking for',
+        items: [
+          'Agent / LLM application engineering roles (Shanghai or remote)',
+          'Funded PhD positions in AI & society or computational social science, 2027 intake',
+        ],
+      },
+      cvLabel: 'CV (PDF)',
+      cvNote: 'one page · English',
+      stack: 'Python · LangGraph / ReAct · RAG · Evaluation · SEM (R) · MySQL',
       hint: 'Move your cursor to make me look · hover my head or hands · drag to spin me',
     },
     about: {
-      title: 'About',
-      eyebrow: 'SOCIOLOGICAL TRAINING × ENGINEERING PRACTICE',
-      intro:
-        'A sociologist by training who works with computational methods and AI. MSc in Sociology (Merit) from Durham University; BSc in International Economics and Trade from Nantong University. I currently work as an AI Application Development Engineer at Huawei and independently run Droppulses, a venture that puts generative and agentic AI into a live commercial loop.',
-      timelineTitle: 'Trajectory',
+      title: 'What I do',
+      eyebrow: 'BUILD / MEASURE / PROVE',
+      pillars: [
+        {
+          k: '01',
+          title: 'Build',
+          text: 'Agent orchestration (ReAct loops, tool use), retrieval-augmented generation with hybrid search and re-ranking, data pipelines and local deployment. Models wired into systems that run, not left in a notebook.',
+        },
+        {
+          k: '02',
+          title: 'Measure',
+          text: 'Evaluation sets, baseline comparisons, refusal and grounding. A conclusion has to bind to evidence; when the evidence is thin, "I don\'t know" is the accurate answer, not the cautious one.',
+        },
+        {
+          k: '03',
+          title: 'Prove',
+          text: 'Structural equation modelling, mediation tests, agreement between model output and manual coding. First ask what a number measures, then what it means.',
+        },
+      ],
+      bio: 'BSc in international trade, MSc in sociology (computational), then engineering. The order looks accidental; the combination is not — I can build the pipeline and design the measurement that makes its output credible. By day I work on AI application components and human–AI interaction evaluation at Huawei; in my own time I build small tools.',
+      note: 'The full version is here:',
     },
-    timeline: [
-      {
-        time: 'Sep 2018 – Jun 2023',
-        title: 'Nantong University · BSc, International Economics and Trade',
-        text: 'GPA 85/100. Thesis built a time-series regression in EViews on two decades of official trade data to estimate the effect of policy uncertainty on trade structure.',
-      },
-      {
-        time: 'Jun 2020 – Sep 2020',
-        title: 'Huatai Securities (Taizhou) · Software Development Intern',
-        text: 'Co-developed a client risk-assessment module in Python, automating the scoring of risk-preference questionnaires and product-matching logic; designed a financial product information system in Django.',
-      },
-      {
-        time: 'Jun 2021 – Jan 2022',
-        title: 'SenseTime · Software Development Intern',
-        text: 'Contributed to an AI smart-traffic prototype, deploying traffic-flow prediction models as RESTful APIs via Flask; built a customer segmentation and tagging system with dashboards.',
-      },
-      {
-        time: 'Sep 2023 – Jan 2025',
-        title: 'Durham University · MSc in Sociology (English-taught)',
-        text: 'Merit. Dissertation applied structural equation modelling in R to a national panel dataset of 11,644 observations, modelling how family-level and school-level resources jointly and indirectly shape achievement.',
-      },
-      {
-        time: 'Jun 2024 – Mar 2025',
-        title: 'Value Enterprise Management Consulting · Data Analysis Intern',
-        text: 'Built an automated social-listening platform in Python and designed a MySQL architecture for real-time crawling, cleaning and classification of multi-source online data; applied NLP to extract stakeholder concerns and sentiment at scale.',
-      },
-      {
-        time: 'Jun 2025 – present',
-        title: 'Droppulses · Founder',
-        text: 'Built and operate a system in which generative and multi-agent AI performs tasks autonomously, developing custom APIs to integrate LLM services into live commercial platforms such as Shopify.',
-      },
-      {
-        time: 'Oct 2025 – present',
-        title: 'Huawei · AI Application Development Engineer',
-        text: 'Develop AI-driven application components in Python and C++, build data pipelines and evaluation benchmarks for multimodal human–AI interaction, and deploy AI capabilities into production systems.',
-      },
-    ],
-    projects: {
-      title: 'Projects',
-      intro: 'Things I have built and still run — not proposals.',
+    work: {
+      title: 'Selected work',
+      intro: 'Things that run — not proposals.',
       items: [
         {
-          name: 'Droppulses',
-          meta: 'Jun 2025 – present · Independent',
-          desc: 'A system in which generative and multi-agent AI performs tasks autonomously. I develop custom APIs to integrate LLM services into live commercial platforms such as Shopify, completed local model deployment and production integration, and collect interaction logs on how AI-mediated exchange shapes user decisions.',
-          tags: ['Multi-agent', 'LLM APIs', 'Local deployment', 'Production'],
-        },
-        {
+          year: '2026',
           name: 'PhD position tracker',
-          meta: '2026 · Personal tooling',
-          desc: 'Scrapes open doctoral positions every morning at 09:00, scores them against a custom profile and renders a visual dashboard. It reads server-rendered payloads over plain HTTP with no headless browser; the core is a rule engine of hard exclusion criteria (language, standardised tests, methodological orientation) with a regression test suite of 12 cases, followed by detail-page re-checks for shortlisted posts — because listing teasers run to a few dozen characters while the requirements that actually disqualify you sit in the detail page.',
-          tags: ['Node.js', 'Rule engine', 'Regression tests', 'Scheduled task'],
+          meta: 'Personal tooling · runs at 09:00 daily',
+          desc: 'Scrapes open doctoral positions across 20+ European institutions, filtered by a rule engine of hard exclusion criteria with a 12-case regression suite; shortlisted posts are then re-checked on the detail page, because listing teasers run to a few dozen characters while the requirements that actually disqualify you sit further down. Over three weeks: 1,119 positions narrowed to 44.',
+          tags: ['Node.js', 'Rule engine', 'Regression tests'],
         },
         {
+          year: '2025',
+          name: 'Droppulses',
+          meta: 'Independent build · generative and multi-agent AI',
+          desc: 'A system in which generative and multi-agent AI performs tasks autonomously: custom APIs integrate LLM services into live commercial platforms such as Shopify, with local model deployment and production integration. Interaction logs are captured to study how AI-mediated exchange shapes user decisions.',
+          tags: ['Multi-agent', 'LLM APIs', 'Production'],
+        },
+        {
+          year: '2024',
           name: 'Social listening platform',
-          meta: 'Jun 2024 – Mar 2025 · during internship at Value',
-          desc: 'An automated monitoring platform in Python with a MySQL architecture supporting real-time crawling, cleaning and classification of multi-source online data. On top of it, NLP extracted stakeholder concerns and sentiment indicators from large-scale unstructured text, feeding firm-level quantitative analysis.',
-          tags: ['Python', 'MySQL', 'NLP', 'Data pipelines'],
+          meta: 'Python · MySQL · NLP',
+          desc: 'Real-time crawling, cleaning and classification of multi-source online data on a MySQL architecture built for incremental writes; NLP on top extracts stakeholder concerns and sentiment indicators from large-scale unstructured text, feeding firm-level quantitative analysis.',
+          tags: ['Python', 'MySQL', 'NLP'],
         },
         {
+          year: '2022',
           name: 'Graph neural networks for large-scale network structure',
-          meta: '2022 · CCF Big Data & Computing Intelligence Contest · ranked 9/159',
-          desc: 'Built multi-scale graph neural networks with attention to model complex networks at node, subgraph and global level; introduced a noise-aware contrastive module that dynamically re-weighted anchors to reduce the effect of supervision error; designed a multi-dimensional ablation framework, improving classification accuracy by 18% over the baseline.',
+          meta: 'CCF Big Data & Computing Intelligence Contest · ranked 9/159',
+          desc: 'Multi-scale GNNs with attention modelling complex networks at node, subgraph and global level; a noise-aware contrastive module re-weights anchors to reduce the effect of supervision error; a multi-dimensional ablation framework validates each component, with classification accuracy 18% above baseline.',
           tags: ['GNNs', 'Attention', 'Ablation'],
         },
       ],
     },
     research: {
-      title: 'Research',
+      title: 'Writing',
       intro:
-        'I work on discourse and identity on digital platforms, the social consequences of AI and large language models, and how algorithms enter decision-making. Methodologically I move between computational text analysis and classical social statistics.',
-      interestsTitle: 'Interests',
-      interests: [
-        'Digital platforms and online discourse',
-        'The societal study of AI and LLMs',
-        'Generative and agentic AI',
-        'Computational social science',
-        'Algorithmic governance and automated decision-making',
+        'Methodologically I move between computational text analysis and classical social statistics, whichever the question needs.',
+      methodsTitle: 'Methods I use',
+      methods: [
+        'Structural equation modelling (R)',
+        'Mediation and moderation analysis',
+        'Computational text analysis (NLP, topic modelling, sentiment)',
+        'Network analysis (GNNs)',
+        'Survey design and instrument validation',
+        'Multimodal qualitative coding',
       ],
       worksTitle: 'Publication and thesis',
       works: [
@@ -286,15 +280,37 @@ export const content = {
         },
         {
           label: 'MSc dissertation · Durham University, 2025',
-          title: 'Micro-Perspectives on the Educational Achievement of Chinese Students: A Comprehensive Assessment of Family and School',
+          title:
+            'Micro-Perspectives on the Educational Achievement of Chinese Students: A Comprehensive Assessment of Family and School',
           meta: 'Structural equation modelling (R) · national panel dataset, 11,644 observations',
           desc: 'Used structural equation modelling to estimate how family-level and school-level resources jointly and indirectly shape individual achievement, testing cultural capital as a mediating mechanism rather than assuming it.',
         },
       ],
     },
+    cv: {
+      title: 'CV',
+      intro:
+        'One page, English. Same source as this page: everything here is in it, and it adds nothing that is not here.',
+      downloadLabel: 'Download CV (PDF)',
+      downloadMeta: 'PDF · one page · ~110 KB',
+      factsTitle: 'At a glance',
+      facts: [
+        { k: 'Now', v: 'Huawei · AI Application Development Engineer (Oct 2025 – present)' },
+        {
+          k: 'Education',
+          v: 'MSc Sociology (computational), Durham — Merit · BSc International Economics and Trade, Nantong University — 85/100',
+        },
+        {
+          k: 'Methods',
+          v: 'Structural equation modelling · mediation analysis · computational text analysis · network analysis · survey design · evaluation design',
+        },
+        { k: 'Tools', v: 'Python · R · C++ · SQL / MySQL · Git · Linux · SPSS · EViews' },
+        { k: 'Languages', v: 'Chinese (native) · English (fluent, English-taught MSc)' },
+      ],
+    },
     contact: {
       title: 'Contact',
-      intro: 'Open to AI application roles, doctoral positions and collaborations.',
+      intro: 'Roles, PhD projects, collaborations — email is fine.',
       emailLabel: 'Email',
       linksTitle: 'Elsewhere',
     },

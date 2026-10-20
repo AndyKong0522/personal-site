@@ -449,10 +449,16 @@ function GltfAvatar({
   const proxies = useRef<THREE.Mesh[]>([])
   const aimYaw = useRef(0)
   const aimPitch = useRef(-HEAD_LIFT)
-  const gest = useRef<{ kind: GestureKind | null; t: number; cur: GestureKind | null }>({
+  const gest = useRef<{
+    kind: GestureKind | null
+    t: number
+    cur: GestureKind | null
+    shown: GestureKind | null
+  }>({
     kind: null,
     t: 0,
     cur: null,
+    shown: null,
   })
   const hoverRay = useRef(new THREE.Raycaster())
   // 每帧复用的模型空间转动量
@@ -632,6 +638,11 @@ function GltfAvatar({
       g.t = 0
     }
     g.cur = target
+    // 悬停命中的部位写进 dataset：自检脚本靠它验证"悬停头部/手"有没有生效（只在此值变化时写）
+    if (g.cur !== g.shown) {
+      g.shown = g.cur
+      document.documentElement.dataset.avatarHover = g.cur ?? ''
+    }
     if (g.kind) {
       g.t += dt
       if (g.t >= (g.kind === 'nod' ? NOD_DUR : WAVE_DUR)) g.kind = null

@@ -2,9 +2,10 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 're
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
-import { content, DISPLAY_LINES, EMAIL, type Lang } from './content'
+import { content, CV_PATH, DISPLAY_LINES, EMAIL, type Lang } from './content'
 import { hero3DMode, prefersReducedMotion, remember3D, type Hero3DMode } from './capabilities'
-import StatsOverlay from './StatsOverlay'
+// 调试角标只在 ?stats=1 时才加载，不占首屏体积
+const StatsOverlay = lazy(() => import('./StatsOverlay'))
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -28,6 +29,7 @@ export default function App() {
   const [sceneReady, setSceneReady] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [active, setActive] = useState(0)
+  const [showStats] = useState(() => new URLSearchParams(location.search).has('stats'))
   const [heroVisible, setHeroVisible] = useState(true)
   const scrollProgress = useRef(0)
   const pointer = useRef({ x: 0, y: 0 })
@@ -77,7 +79,7 @@ export default function App() {
     return () => window.removeEventListener('pointermove', onMove)
   }, [])
 
-  // 人像移出视口就停渲染：滚到下面的项目/研究区时，3D 不该继续抢 GPU 和主线程。
+  // 人像移出视口就停渲染：滚到下面的段落时，3D 不该继续抢 GPU 和主线程。
   useEffect(() => {
     const el = stageRef.current
     if (!el) return
@@ -126,8 +128,8 @@ export default function App() {
     gsap.ticker.lagSmoothing(0)
 
     const ctx = gsap.context(() => {
-      // 首页 3D 层随滚动淡出、上移（视差）。
-      gsap.to('.hero-stage', {
+      // 首页右列人像随滚动淡出、上移（视差）。文案列单独走。
+      gsap.to('.hero-figure', {
         yPercent: -16,
         opacity: 0.12,
         ease: 'none',
@@ -139,22 +141,23 @@ export default function App() {
         ease: 'none',
         scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
       })
-      // 各分段进入视口时淡入。
+      // 各分段进入视口时淡入。左侧栏不参与（sticky 元素上挂 transform 会让它抖）。
       gsap.utils.toArray<HTMLElement>('.reveal').forEach((el) => {
         gsap.from(el, {
-          y: 34,
+          y: 30,
           opacity: 0,
-          duration: 0.8,
+          duration: 0.75,
           ease: 'power2.out',
-          scrollTrigger: { trigger: el, start: 'top 88%' },
+          scrollTrigger: { trigger: el, start: 'top 90%' },
         })
       })
-      // 时间线：竖线随滚动画出。
-      gsap.from('.timeline-line', {
-        scaleY: 0,
-        transformOrigin: 'top',
+      // 展示字随滚动横向错位，制造一点点速度差。
+      gsap.from('.display-band span', {
+        xPercent: -4,
+        opacity: 0.2,
+        stagger: 0.08,
         ease: 'none',
-        scrollTrigger: { trigger: '.timeline', start: 'top 75%', end: 'bottom 65%', scrub: true },
+        scrollTrigger: { trigger: '.display-band', start: 'top 92%', end: 'bottom 40%', scrub: true },
       })
     }, rootRef)
 
@@ -183,10 +186,10 @@ export default function App() {
             </a>
           ))}
         </nav>
-        <div className="header-meta">
-          <span className="header-role">{t.hero.role}</span>
-          <span className="header-sub">{t.hero.roleSub}</span>
-        </div>
+        <a className="header-cv" href={CV_PATH} download>
+          CV
+          <span aria-hidden="true">↓</span>
+        </a>
         <button
           className="lang-toggle"
           type="button"
@@ -199,173 +202,217 @@ export default function App() {
 
       <main id="main">
         <section className="hero" id="top">
-          {/* 3D 层：居中人像。pointer-events 关掉，不挡住上面的文字和按钮 */}
-          <div className="hero-stage" ref={stageRef}>
-            <img
-              className={`avatar-fallback${sceneReady ? ' is-hidden' : ''}`}
-              src="/avatar-portrait.webp"
-              alt={t.a11y.avatarAlt}
-              width={420}
-              height={935}
-              decoding="async"
-            />
-            {mode === 'offer' && !use3D && (
-              <button type="button" className="avatar-cta" onClick={enable3D}>
-                <span className="avatar-cta-dot" aria-hidden="true" />
-                {lang === 'zh' ? '让我动起来' : 'Bring me to life'}
-              </button>
-            )}
-            {showHint && (
-              <p className="avatar-hint" aria-live="polite">
-                {lang === 'zh' ? '3D 正在加载…' : 'Loading 3D…'}
-              </p>
-            )}
-            {use3D && (
-              <Suspense fallback={null}>
-                <div className={`avatar-canvas${sceneReady ? ' is-visible' : ''}`}>
-                  <AvatarScene
-                    scrollProgress={scrollProgress}
-                    pointer={pointer}
-                    reducedMotion={reducedMotion}
-                    paused={!heroVisible}
-                    onReady={() => setSceneReady(true)}
-                  />
-                </div>
-              </Suspense>
-            )}
-          </div>
-
-          <div className="hero-inner hero-copy">
-            <div className="hero-left">
+          <div className="hero-inner">
+            {/* 左列：先给信息。招聘方 / 导师 30 秒内要能拿到"在做什么、在找什么、怎么联系" */}
+            <div className="hero-copy">
               <p className="eyebrow">{t.hero.eyebrow}</p>
-              <h1 className="display">
-                {DISPLAY_LINES.map((line) => (
-                  <span key={line}>{line}</span>
-                ))}
+              <h1 className={`hero-name${lang === 'en' ? ' is-latin' : ''}`}>
+                <span className="hero-name-main">{t.hero.name}</span>
+                {t.hero.nameEn ? <span className="hero-name-en">{t.hero.nameEn}</span> : null}
+                <span className="hero-name-alt">{t.hero.nameAlt}</span>
               </h1>
-              <p className="greeting">{t.hero.greeting}</p>
+              <p className="hero-role-line">{t.hero.roleLine}</p>
               <p className="hero-lead">{t.hero.lead}</p>
-              <a className="cta" href="#about">
-                {t.hero.cta}
-                <span className="cta-arrow" aria-hidden="true">
-                  ↗
-                </span>
-              </a>
-            </div>
-            <div className="hero-right">
-              <h2 className="side-title">{t.hero.sideTitle}</h2>
-              <ul className="side-lines">
-                {t.hero.sideLines.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
 
-          <div className="hero-foot hero-copy">
-            <p className="hero-blurb">{t.hero.blurb}</p>
-            <div className="hero-foot-row">
-              <span className="scroll-hint">{t.hero.scroll} ↓</span>
-              <span className="mouse-hint">{t.hero.hint}</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="section" id="about">
-          <header className="section-head reveal">
-            <p className="eyebrow">
-              {t.sections[1].index} / {t.sections[1].label}
-            </p>
-            <h2>{t.about.title}</h2>
-            <p className="sub-eyebrow">{t.about.eyebrow}</p>
-          </header>
-          <p className="lead reveal">{t.about.intro}</p>
-
-          <h3 className="sub-title reveal">{t.about.timelineTitle}</h3>
-          <ol className="timeline">
-            <span className="timeline-line" aria-hidden="true" />
-            {t.timeline.map((item) => (
-              <li key={item.time} className="reveal">
-                <span className="time">{item.time}</span>
-                <span className="tl-title">{item.title}</span>
-                <span className="tl-text">{item.text}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="section" id="projects">
-          <header className="section-head reveal">
-            <p className="eyebrow">
-              {t.sections[2].index} / {t.sections[2].label}
-            </p>
-            <h2>{t.projects.title}</h2>
-            <p className="sub-eyebrow">{t.projects.intro}</p>
-          </header>
-          <div className="cards">
-            {t.projects.items.map((p) => (
-              <article key={p.name} className="card reveal">
-                <h3>{p.name}</h3>
-                <p className="card-meta">{p.meta}</p>
-                <p className="card-desc">{p.desc}</p>
-                <ul className="tags">
-                  {p.tags.map((tag) => (
-                    <li key={tag}>{tag}</li>
+              <div className="hero-seeking">
+                <p className="seeking-label">{t.hero.lookingFor.title}</p>
+                <ul>
+                  {t.hero.lookingFor.items.map((item) => (
+                    <li key={item}>{item}</li>
                   ))}
                 </ul>
-              </article>
-            ))}
+              </div>
+
+              <div className="hero-actions">
+                <a className="btn btn-outline" href={CV_PATH} download>
+                  {t.hero.cvLabel}
+                  <span className="btn-note">{t.hero.cvNote}</span>
+                </a>
+                <a className="btn btn-solid" href={`mailto:${EMAIL}`}>
+                  {EMAIL}
+                </a>
+              </div>
+
+              <p className="hero-stack">{t.hero.stack}</p>
+            </div>
+
+            {/* 右列：头像。3D / 静图 / 占位插画三态不变，尺寸由 --avatar-w/--avatar-h 统一控制 */}
+            <div className="hero-figure">
+              <div className="hero-stage" ref={stageRef}>
+                <img
+                  className={`avatar-fallback${sceneReady ? ' is-hidden' : ''}`}
+                  src="/avatar-portrait.webp"
+                  alt={t.a11y.avatarAlt}
+                  width={420}
+                  height={935}
+                  decoding="async"
+                />
+                {mode === 'offer' && !use3D && (
+                  <button type="button" className="avatar-cta" onClick={enable3D}>
+                    <span className="avatar-cta-dot" aria-hidden="true" />
+                    {lang === 'zh' ? '让我动起来' : 'Bring me to life'}
+                  </button>
+                )}
+                {showHint && (
+                  <p className="avatar-hint" aria-live="polite">
+                    {lang === 'zh' ? '3D 正在加载…' : 'Loading 3D…'}
+                  </p>
+                )}
+                {use3D && (
+                  <Suspense fallback={null}>
+                    <div className={`avatar-canvas${sceneReady ? ' is-visible' : ''}`}>
+                      <AvatarScene
+                        scrollProgress={scrollProgress}
+                        pointer={pointer}
+                        reducedMotion={reducedMotion}
+                        paused={!heroVisible}
+                        onReady={() => setSceneReady(true)}
+                      />
+                    </div>
+                  </Suspense>
+                )}
+              </div>
+              <p className="mouse-hint">{t.hero.hint}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* 展示字：造 / 量 / 证。三个动词就是下面三节的引子。 */}
+        <p className="display-band" aria-hidden="true">
+          {DISPLAY_LINES.map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </p>
+
+        <section className="section" id="about">
+          <header className="section-rail">
+            <span className="rail-index">{t.sections[1].index}</span>
+            <h2>{t.about.title}</h2>
+            <p className="rail-note">{t.about.eyebrow}</p>
+          </header>
+          <div className="section-body">
+            <div className="pillars">
+              {t.about.pillars.map((p) => (
+                <article key={p.title} className="pillar reveal">
+                  <span className="pillar-k">{p.k}</span>
+                  <h3>{p.title}</h3>
+                  <p>{p.text}</p>
+                </article>
+              ))}
+            </div>
+            <div className="about-bio reveal">
+              <p>{t.about.bio}</p>
+              <p className="about-note">
+                {t.about.note}{' '}
+                <a href={CV_PATH} download>
+                  {t.hero.cvLabel}
+                </a>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" id="work">
+          <header className="section-rail">
+            <span className="rail-index">{t.sections[2].index}</span>
+            <h2>{t.work.title}</h2>
+            <p className="rail-note">{t.work.intro}</p>
+          </header>
+          <div className="section-body">
+            <ol className="rows">
+              {t.work.items.map((w) => (
+                <li key={w.name} className="row reveal">
+                  <span className="row-year">{w.year}</span>
+                  <div className="row-main">
+                    <h3>{w.name}</h3>
+                    <p className="row-meta">{w.meta}</p>
+                    <p className="row-desc">{w.desc}</p>
+                    <ul className="tags">
+                      {w.tags.map((tag) => (
+                        <li key={tag}>{tag}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
         <section className="section" id="research">
-          <header className="section-head reveal">
-            <p className="eyebrow">
-              {t.sections[3].index} / {t.sections[3].label}
-            </p>
+          <header className="section-rail">
+            <span className="rail-index">{t.sections[3].index}</span>
             <h2>{t.research.title}</h2>
           </header>
-          <p className="lead reveal">{t.research.intro}</p>
+          <div className="section-body">
+            <p className="lead reveal">{t.research.intro}</p>
 
-          <h3 className="sub-title reveal">{t.research.interestsTitle}</h3>
-          <ul className="tags tags-lg reveal">
-            {t.research.interests.map((i) => (
-              <li key={i}>{i}</li>
-            ))}
-          </ul>
+            <h3 className="micro-title reveal">{t.research.methodsTitle}</h3>
+            <ul className="chips reveal">
+              {t.research.methods.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
 
-          <h3 className="sub-title reveal">{t.research.worksTitle}</h3>
-          <div className="works">
-            {t.research.works.map((w) => (
-              <article key={w.title} className="work reveal">
-                <p className="work-label">{w.label}</p>
-                <h4>{w.title}</h4>
-                <p className="work-meta">{w.meta}</p>
-                <p className="card-desc">{w.desc}</p>
-              </article>
-            ))}
+            <h3 className="micro-title reveal">{t.research.worksTitle}</h3>
+            <div className="works">
+              {t.research.works.map((w) => (
+                <article key={w.title} className="work reveal">
+                  <p className="work-label">{w.label}</p>
+                  <h4>{w.title}</h4>
+                  <p className="work-meta">{w.meta}</p>
+                  <p className="row-desc">{w.desc}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section section-cv" id="cv">
+          <header className="section-rail">
+            <span className="rail-index">{t.sections[4].index}</span>
+            <h2>{t.cv.title}</h2>
+            <p className="rail-note">{t.cv.intro}</p>
+          </header>
+          <div className="section-body">
+            <div className="cv-sheet reveal">
+              <div className="cv-download">
+                <a className="btn btn-solid" href={CV_PATH} download>
+                  {t.cv.downloadLabel}
+                  <span className="btn-note">{t.cv.downloadMeta}</span>
+                </a>
+              </div>
+              <h3 className="micro-title">{t.cv.factsTitle}</h3>
+              <dl className="cv-facts">
+                {t.cv.facts.map((f) => (
+                  <div key={f.k}>
+                    <dt>{f.k}</dt>
+                    <dd>{f.v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </div>
         </section>
 
         <section className="section" id="contact">
-          <header className="section-head reveal">
-            <p className="eyebrow">
-              {t.sections[4].index} / {t.sections[4].label}
-            </p>
+          <header className="section-rail">
+            <span className="rail-index">{t.sections[5].index}</span>
             <h2>{t.contact.title}</h2>
-            <p className="sub-eyebrow">{t.contact.intro}</p>
+            <p className="rail-note">{t.contact.intro}</p>
           </header>
-          <dl className="contact-list reveal">
-            <dt>{t.contact.emailLabel}</dt>
-            <dd>
+          <div className="section-body">
+            <p className="contact-big reveal">
               <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
-            </dd>
-            <dt>{t.contact.linksTitle}</dt>
-            <dd className="pending">
-              LinkedIn · GitHub
-              <span className="pending-note">{lang === 'zh' ? '待补充' : 'to be added'}</span>
-            </dd>
-          </dl>
+            </p>
+            <dl className="contact-list reveal">
+              <dt>{t.contact.linksTitle}</dt>
+              <dd className="pending">
+                LinkedIn · GitHub
+                <span className="pending-note">{lang === 'zh' ? '待补充' : 'to be added'}</span>
+              </dd>
+            </dl>
+          </div>
         </section>
       </main>
 
@@ -383,7 +430,11 @@ export default function App() {
       <div className="progress" aria-hidden="true">
         <span ref={barRef} className="progress-bar" />
       </div>
-      <StatsOverlay />
+      {showStats && (
+        <Suspense fallback={null}>
+          <StatsOverlay />
+        </Suspense>
+      )}
     </div>
   )
 }

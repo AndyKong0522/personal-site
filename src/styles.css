@@ -1,6 +1,6 @@
-/* 视觉方向参照 refs/reference-biaoge.jpg（深色版）的**构图**：
-   居中人像、左侧压缩大字、四角小字标签、细分隔线、底部进度条。
-   配色改成浅色纸感：暖白底 + 墨色字。 */
+/* 视觉语言不变：暖白纸感底 + 墨色字 + Anton 展示字 + 纸感颗粒。
+   结构换了：分段改成「左侧栏（粘住）+ 右内容」，项目从卡片改成横排行，
+   新增「造 / 量 / 证」三栏和 CV 一块。 */
 
 /* 自托管展示字体（Anton，仅拉丁字形，18 KB，不外链任何字体服务）。
    中文回落到系统黑体。 */
@@ -95,7 +95,7 @@ a {
   z-index: 50;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.1rem;
   padding: 1.1rem var(--pad-x);
   /* 顶部渐隐，滚动时文字不会和内容撞在一起 */
   background: linear-gradient(var(--bg) 58%, transparent);
@@ -110,8 +110,8 @@ a {
 }
 .site-header nav {
   display: flex;
-  gap: 1.5rem;
-  margin: 0 auto;
+  gap: 1.4rem;
+  margin: 0 auto 0 0.8rem;
 }
 .site-header nav a {
   position: relative;
@@ -133,20 +133,24 @@ a {
   height: 1px;
   background: var(--fg);
 }
-.header-meta {
-  display: grid;
-  gap: 0.15rem;
-  text-align: right;
-}
-.header-role {
-  font-size: 0.66rem;
-  letter-spacing: 0.18em;
+/* CV 常驻入口：招聘方和导师随时能拿到，不用滚到底 */
+.header-cv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
-.header-sub {
-  font-size: 0.66rem;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+.header-cv:hover {
+  border-color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
 }
 .lang-toggle {
   border: 1px solid var(--line);
@@ -165,27 +169,34 @@ a {
 /* ---------- 首页 ---------- */
 .hero {
   position: relative;
-  min-height: 100svh;
+  /* 比一屏矮一点：让展示字从折线处露出来，暗示下面还有内容 */
+  min-height: 86svh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: radial-gradient(72% 58% at 50% 40%, #ffffff 0%, var(--bg) 74%);
 }
 
+/* 头像尺寸只有这一处定义，静图按同一组变量等比缩放：
+   静图宽 = 画布宽 × 0.72、静图高 = 画布高 × 0.91（比例错的话 3D 淡入时画面会跳）。 */
 .hero-stage {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  /* 高度固定成头像高度：静图模式下容器不会被静图撑小，两种模式的垂直中心才一致 */
+  height: var(--avatar-h);
   z-index: 1;
   display: grid;
   place-items: center;
-  pointer-events: none; /* 文字和按钮压在 3D 上，仍然可点 */
+  justify-self: center;
+  pointer-events: none; /* 只让画布自己吃指针事件，其余交给页面 */
 }
 .hero-stage > * {
   grid-area: 1 / 1;
 }
 .avatar-fallback {
-  width: min(40vw, 460px);
-  max-height: 82svh;
+  /* 静图高度 = 画布高 × 0.939：3D 里人像占画布高度的 1.24/1.32 = 93.9%
+     （AVATAR_HEIGHT 1.24、相机可见高度 2·2.16·tan17° = 1.32），按这个比例两者切换才不跳。 */
+  width: calc(var(--avatar-w) * 0.72);
+  max-height: calc(var(--avatar-h) * 0.939);
   object-fit: contain;
   transition: opacity 0.6s ease;
 }
@@ -194,7 +205,7 @@ a {
 }
 .avatar-hint {
   position: absolute;
-  bottom: 12%;
+  bottom: 26%;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
@@ -213,7 +224,9 @@ a {
    只在慢网/没点过的访客身上出现；点过一次会存进 localStorage，之后自动加载。 */
 .avatar-cta {
   position: absolute;
-  bottom: 12%;
+  /* 浮在人像身上（像视频播放键）：放在深色长裤那一段，白底胶囊才看得清，
+     压在白鞋上会糊成一片。 */
+  bottom: 26%;
   left: 50%;
   transform: translateX(-50%);
   display: inline-flex;
@@ -248,8 +261,8 @@ a {
 }
 
 .avatar-canvas {
-  width: min(48vw, 640px);
-  height: min(90svh, 810px);
+  width: var(--avatar-w);
+  height: var(--avatar-h);
   opacity: 0;
   transition: opacity 0.6s ease;
   /* 只有画布这一块吃指针事件，人物周边和页面其余部分照常滚动/点击。
@@ -262,35 +275,39 @@ a {
   opacity: 1;
 }
 
+/* 首屏两列：左信息（约 61%）、右头像（约 39%，头像本身 34vw）。 */
 .hero-inner {
   position: relative;
   z-index: 2;
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   align-items: center;
-  gap: 2rem;
-  padding: 6.5rem var(--pad-x) 1rem;
-}
-/* 文字层在画布上面（z-index 2），默认会把指针事件全吃掉，
-   导致人物收不到悬停和拖动。整层放开，只把真正可点的元素重新打开。 */
-.hero-inner,
-.hero-foot {
+  gap: clamp(2rem, 5vw, 5rem);
+  padding: 6.5rem var(--pad-x) 2rem;
+  /* 文字层默认不接指针事件（否则会吃掉头像的悬停和拖动），
+     只把真正可点的元素重新打开。 */
   pointer-events: none;
 }
 .hero-inner a,
-.hero-inner button,
-.hero-foot a,
-.hero-foot button {
+.hero-inner button {
   pointer-events: auto;
 }
-.hero-left {
-  max-width: 34rem;
+.hero-copy {
+  max-width: 40rem;
 }
-.hero-right {
+.hero-figure {
+  /* 头像尺寸只在这里定义，静图按同一组变量等比缩放：
+     静图宽 = 画布宽 × 0.72、静图高 = 画布高 × 0.91（比例错的话 3D 淡入时画面会跳）。
+     宽度写死成头像宽度，静图模式和 3D 模式的水平中心才会一致。 */
+  --avatar-w: min(34vw, 448px);
+  --avatar-h: min(63svh, 567px);
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
   justify-self: end;
-  max-width: 21rem;
-  padding-top: 2.5rem;
+  width: var(--avatar-w);
+  max-width: 100%;
 }
 
 .eyebrow {
@@ -300,233 +317,351 @@ a {
   text-transform: uppercase;
   color: var(--muted);
 }
-.display {
-  margin: 0 0 1.6rem;
+/* 左列排版：姓名 → 身份行 → lead → 在找 → 按钮 → 技术栈 */
+.hero-name {
+  margin: 0 0 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.7rem;
+  font-size: clamp(1.85rem, 3.2vw, 2.75rem);
+  line-height: 1.12;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+/* Anton 只有拉丁字形：英文名用它，中文名用正文字体；
+   英文界面整行都是拉丁字母，直接整行换成展示字体。 */
+.hero-name.is-latin {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(2.9rem, 8.4vw, 7.4rem);
-  line-height: 0.85;
   text-transform: uppercase;
   letter-spacing: 0.005em;
 }
-.display span {
-  display: block;
-}
-.greeting {
-  margin: 0 0 0.3rem;
-  font-size: 1.05rem;
-}
-.hero-lead {
-  margin: 0 0 1.7rem;
-  max-width: 26rem;
-  color: var(--muted);
-}
-.cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  background: var(--fg);
-  color: var(--bg);
-  border-radius: 999px;
-  padding: 0.7rem 0.8rem 0.7rem 1.25rem;
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-.cta-arrow {
-  display: grid;
-  place-items: center;
-  width: 1.55rem;
-  height: 1.55rem;
-  border-radius: 50%;
-  background: var(--bg);
-  color: var(--fg);
-  font-size: 0.78rem;
-}
-.cta:hover .cta-arrow {
-  transform: translate(1px, -1px);
-}
-
-.side-title {
-  margin: 0 0 0.9rem;
+.hero-name-en {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: 1.45rem;
-  line-height: 1;
+  font-size: 0.78em;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
+  color: var(--fg);
 }
-.side-lines {
+.hero-name-alt {
+  font-size: 0.48em;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.hero-name-alt::before {
+  content: '(';
+}
+.hero-name-alt::after {
+  content: ')';
+}
+.hero-role-line {
+  margin: 0 0 1rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  text-wrap: balance; /* 折成两行时不会只在第二行留一个词 */
+}
+.hero-lead {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--muted);
+}
+
+.hero-seeking {
+  margin: 1.5rem 0 0;
+}
+.seeking-label {
+  margin: 0 0 0.55rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hero-seeking ul {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.45rem;
-  color: var(--muted);
-  font-size: 0.88rem;
+  gap: 0.35rem;
 }
-
-.hero-foot {
+.hero-seeking li {
   position: relative;
-  z-index: 2;
-  padding: 0 var(--pad-x) 3.4rem;
+  padding-left: 1.05rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
-.hero-blurb {
-  margin: 0 0 1.3rem;
-  max-width: 27rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-  line-height: 1.75;
+.hero-seeking li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 50%;
+  background: var(--fg);
 }
-.hero-foot-row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 0.6rem;
+  margin: 1.5rem 0 0;
 }
-.scroll-hint {
-  grid-column: 2;
-  font-size: 0.66rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.05rem;
+  border: 1px solid var(--fg);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.mouse-hint {
-  grid-column: 3;
-  justify-self: end;
-  font-size: 0.66rem;
-  letter-spacing: 0.1em;
+/* 按钮后面的小注（"一页 · 英文" / 文件大小），不抢主文案 */
+.btn-note {
+  margin-left: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+.btn-outline {
+  background: transparent;
+  color: var(--fg);
+}
+.btn-outline:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+.btn-solid {
+  background: var(--fg);
+  color: var(--bg);
+}
+.btn-solid:hover {
+  background: #000;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+.hero-stack {
+  margin: 1.6rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.76rem;
+  letter-spacing: 0.02em;
   color: var(--muted);
 }
 
-/* ---------- 通用分段 ---------- */
-.section {
+/* 展示字：造 / 量 / 证。三个动词是下面三节的引子。 */
+.display-band {
   max-width: var(--max);
   margin: 0 auto;
-  padding: 7rem var(--pad-x);
+  padding: 0 var(--pad-x) 6rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 7.6vw, 6.4rem);
+  line-height: 0.94;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+}
+.display-band span {
+  display: block;
+}
+
+/* 头像下方的小字说明 */
+.mouse-hint {
+  margin: 0;
+  max-width: 21rem;
+  text-align: center;
+  font-size: 0.62rem;
+  line-height: 1.55;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* ---------- 分段：左侧栏 + 右内容 ---------- */
+.section {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4.5rem);
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 5.5rem var(--pad-x);
   border-top: 1px solid var(--line);
 }
-.section-head {
-  margin-bottom: 2.5rem;
+.section-rail {
+  position: sticky;
+  top: 5.5rem;
+  align-self: start;
+  display: grid;
+  gap: 0.7rem;
 }
-.section h2 {
+.rail-index {
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+.section-rail h2 {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(2rem, 5vw, 3.4rem);
-  line-height: 0.95;
+  font-size: clamp(1.5rem, 2.7vw, 2.15rem);
+  line-height: 1;
   text-transform: uppercase;
+  letter-spacing: 0.005em;
 }
-.sub-eyebrow {
-  margin: 0.8rem 0 0;
+.rail-note {
+  margin: 0;
+  max-width: 24ch;
+  font-size: 0.82rem;
   color: var(--muted);
-  font-size: 0.85rem;
-  max-width: 60ch;
 }
-.lead {
-  color: var(--muted);
-  font-size: 1.05rem;
-  max-width: 68ch;
+.section-body {
+  display: grid;
+  gap: 2rem;
+  align-content: start;
+  min-width: 0;
 }
-.sub-title {
+.micro-title {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  margin: 3.5rem 0 1.6rem;
-  font-size: 0.72rem;
+  margin: 0;
+  font-size: 0.7rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   font-weight: 600;
 }
-.sub-title::before {
+.micro-title::before {
   content: '';
-  width: 1.6rem;
+  width: 1.4rem;
   height: 1px;
   background: var(--muted);
   flex: none;
 }
-
-/* ---------- 经历时间线 ---------- */
-.timeline {
-  position: relative;
-  list-style: none;
+.lead {
   margin: 0;
-  padding: 0 0 0 2rem;
-}
-.timeline-line {
-  position: absolute;
-  left: 0.42rem;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(var(--fg), rgba(27, 25, 23, 0.06));
-}
-.timeline li {
-  position: relative;
-  display: grid;
-  gap: 0.3rem;
-  padding: 0 0 2.4rem;
-}
-.timeline li::before {
-  content: '';
-  position: absolute;
-  left: -1.99rem;
-  top: 0.5rem;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 1px solid var(--fg);
-}
-.timeline .time {
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
   color: var(--muted);
-}
-.tl-title {
-  font-weight: 600;
-}
-.tl-text {
-  color: var(--muted);
-  font-size: 0.92rem;
-  max-width: 64ch;
+  font-size: 1.05rem;
+  max-width: 66ch;
 }
 
-/* ---------- 项目卡片（1px 网格线） ---------- */
-.cards {
+/* 造 / 量 / 证 三栏 */
+.pillars {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);
 }
-.card {
+.pillar {
   display: grid;
+  gap: 0.55rem;
   align-content: start;
-  gap: 0.7rem;
   background: var(--card);
-  padding: 1.8rem;
+  padding: 1.6rem 1.4rem;
 }
-.card h3 {
-  margin: 0;
-  font-size: 1.15rem;
+.pillar-k {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 0.9;
+  color: var(--fg);
+  opacity: 0.82;
 }
-.card-meta {
+.pillar h3 {
   margin: 0;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.pillar p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.about-bio {
+  display: grid;
+  gap: 0.9rem;
+  max-width: 64ch;
+}
+.about-bio p {
+  margin: 0;
+  font-size: 1.02rem;
+}
+.about-note {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.about-note a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+/* 做过的：横排行，不是卡片 */
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.9rem 0;
+  border-top: 1px solid var(--line);
+}
+.row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.row-year {
+  padding-top: 0.3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+.row-main {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.row-main h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.28;
+  letter-spacing: -0.005em;
+}
+.row-meta {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.card-desc {
+.row-desc {
   margin: 0;
+  max-width: 68ch;
+  font-size: 0.94rem;
   color: var(--muted);
-  font-size: 0.92rem;
 }
 .tags {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin: 0.3rem 0 0;
+  margin: 0.35rem 0 0;
   padding: 0;
 }
 .tags li {
@@ -537,22 +672,33 @@ a {
   padding: 0.22rem 0.6rem;
   color: var(--muted);
 }
-.tags-lg li {
+
+/* 方法标签（不是"研究兴趣"——只列用过的方法） */
+.chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+}
+.chips li {
   font-size: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
   padding: 0.35rem 0.85rem;
-  color: var(--fg);
 }
 
-/* ---------- 论文 ---------- */
+/* 论文 */
 .works {
   display: grid;
-  gap: 1.6rem;
+  gap: 1.8rem;
 }
 .work {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.5rem;
   border-left: 1px solid var(--line);
-  padding-left: 1.5rem;
+  padding-left: 1.4rem;
 }
 .work-label {
   margin: 0;
@@ -563,23 +709,80 @@ a {
 }
 .work h4 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   line-height: 1.5;
 }
 .work-meta {
   margin: 0;
-  font-size: 0.85rem;
-  opacity: 0.9;
+  font-size: 0.84rem;
+  color: var(--muted);
 }
 
-/* ---------- 联系 ---------- */
+/* CV：一块"纸"，下载 + 速览 */
+.section-cv .section-body {
+  gap: 1.6rem;
+}
+.cv-sheet {
+  display: grid;
+  gap: 1.4rem;
+  padding: 1.9rem;
+  border: 1px solid var(--fg);
+  background: var(--card);
+}
+.cv-facts {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+}
+.cv-facts > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+}
+.cv-facts > div:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.cv-facts dt {
+  padding-top: 0.15rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cv-facts dd {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+/* 联系 */
+.contact-big {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.35rem, 3.4vw, 2.4rem);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  word-break: break-word;
+}
+.contact-big a {
+  text-decoration: none;
+  box-shadow: inset 0 -2px 0 var(--fg);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.contact-big a:hover {
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: none;
+}
 .contact-list {
   display: grid;
   gap: 0.35rem;
   margin: 0;
 }
 .contact-list dt {
-  margin-top: 1.5rem;
   font-size: 0.68rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -587,7 +790,7 @@ a {
 }
 .contact-list dd {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1rem;
 }
 .pending {
   display: flex;
@@ -652,58 +855,64 @@ a {
 
 /* ---------- 窄屏 ---------- */
 @media (max-width: 900px) {
-  .site-header nav,
-  .header-meta {
+  .site-header nav {
     display: none;
   }
-  .lang-toggle {
+  .header-cv {
     margin-left: auto;
   }
   .hero {
     min-height: auto;
     padding-top: 4.5rem;
   }
-  .hero-stage {
-    position: relative;
-    inset: auto;
-    height: 54svh;
-  }
-  .avatar-canvas {
-    width: min(80vw, 420px);
-    height: 100%;
-  }
-  .avatar-fallback {
-    width: min(66vw, 350px);
-  }
+  /* 手机上：文字在上、头像在下（DOM 顺序就是文字在前）。
+     头像只占约 34svh，别把「在找」和按钮挤出第一屏。 */
   .hero-inner {
     grid-template-columns: 1fr;
-    gap: 1.75rem;
-    padding: 1.5rem var(--pad-x) 0;
+    gap: 1.6rem;
+    padding: 1rem var(--pad-x) 2.5rem;
   }
-  .hero-right {
-    justify-self: start;
-    max-width: none;
+  .hero-figure {
+    --avatar-w: min(62vw, 300px);
+    --avatar-h: min(34svh, 300px);
+    justify-self: center;
+  }
+  .display-band {
+    padding-bottom: 3.5rem;
+  }
+  /* 分段改成单列，左侧栏不再粘住 */
+  .section {
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+    padding: 4rem var(--pad-x);
+  }
+  .section-rail {
+    position: static;
+    gap: 0.5rem;
+  }
+  .rail-note {
+    max-width: 46ch;
+  }
+  .pillars {
+    grid-template-columns: 1fr;
+  }
+  .pillar {
+    padding: 1.3rem 1.15rem;
+  }
+  .row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 1.6rem 0;
+  }
+  .row-year {
     padding-top: 0;
   }
-  .hero-foot {
-    padding: 1.75rem var(--pad-x) 3rem;
+  .cv-sheet {
+    padding: 1.3rem;
   }
-  .hero-foot-row {
+  .cv-facts > div {
     grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 0.4rem;
-  }
-  .scroll-hint {
-    grid-column: 1;
-  }
-  .mouse-hint {
-    display: none;
-  }
-  .display {
-    font-size: clamp(2.4rem, 12.5vw, 3.6rem);
-  }
-  .section {
-    padding: 4.5rem var(--pad-x);
+    gap: 0.25rem;
   }
   .hud-index {
     display: none;
@@ -717,17 +926,5 @@ a {
     transition: none !important;
     animation: none !important;
     scroll-behavior: auto !important;
-  }
-}
-
-/* 人像放大到 90svh 后，鞋底会压到向下滚动这行提示（它原来在文本列的最后一行）。
-   桌面端把它钉在 hero 底部正中，和小人错开。 */
-@media (min-width: 900px) {
-  .scroll-hint {
-    position: absolute;
-    bottom: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    margin: 0;
   }
 }
