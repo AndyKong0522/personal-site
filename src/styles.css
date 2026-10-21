@@ -630,8 +630,7 @@ a {
   width: 100%;
   height: auto;
   border-radius: 10px;
-  background: #fff;
-  filter: grayscale(1) contrast(1.03);
+  background: var(--card);
 }
 .about-note {
   color: var(--muted);
