@@ -61,7 +61,7 @@ export const content = {
       nameEn: 'Huipeng Gong',
       nameAlt: '',
       cta: '联系我',
-      lead: '智能体编排、检索、数据管线，然后是更在意的那一半：评测集、基线对照、拒答。一个系统说"不知道"的时候，它是不是真的不知道——这件事可以测。',
+      lead: '用工程把人工智能系统做出来，再用社会科学的方法检验它：评测可不可信，测量测到的是不是想测的，结论能不能落到证据上。一手写数据管线和智能体，一手做文本分析、结构方程与人工编码校验。',
       hint: '移动鼠标我会看你 · 悬停头部或手试试 · 按住可拖动',
     },
     about: {
@@ -71,7 +71,7 @@ export const content = {
         {
           k: '造',
           title: '把系统做出来',
-          text: '智能体编排（循环调度、工具调用）、检索、数据管线与本地部署。把模型接进真会跑的系统，而不是停在笔记本里。',
+          text: '数据采集与管线、检索、智能体与本地部署。把模型接进真会跑的系统，而不是停在笔记本里。',
         },
         {
           k: '量',
@@ -84,19 +84,12 @@ export const content = {
           text: '结构方程模型、中介机制检验、模型分类与人工编码的一致性。先问这个数字测的是什么，再谈它说明什么。',
         },
       ],
-      bio: '本科读国际贸易，硕士转社会学（计算方向），毕业后做工程。顺序看着像绕路，凑成的东西不多见：能写爬虫和管线，也知道怎么设计一个可信的测量。现在白天在华为做人工智能应用组件和人机交互评测，业余自己搭小工具。',
+      bio: '本科读国际贸易，硕士转社会学，毕业后做工程。顺序看着像绕路，凑成的东西不多见：能写爬虫和管线，也知道怎么设计一个可信的测量。现在白天在华为做人工智能应用组件和人机交互评测，业余自己搭小工具。',
     },
     work: {
       title: '做过的',
       intro: '能跑起来的，不是设想。',
       items: [
-        {
-          year: '2026',
-          name: '博士岗位追踪系统',
-          meta: '自用 · 每天 09:00 自动跑',
-          desc: '抓二十多所欧洲学校的在招岗位，一套硬性排除规则加 12 条回归测试；初筛过的再抓详情页复核——列表摘要只有几十个字，真正卡人的要求全写在详情页里。三周下来，1119 个岗位筛成 44 个。',
-          tags: ['自动化抓取', '规则引擎', '回归测试'],
-        },
         {
           year: '2025',
           name: 'Droppulses',
@@ -158,7 +151,7 @@ export const content = {
       factsTitle: '速览',
       facts: [
         { k: '现在', v: '华为 · 人工智能应用开发工程师（2025.10 至今）' },
-        { k: '教育', v: '杜伦大学 社会学硕士（计算方向），成绩优秀 · 南通大学 国际经济与贸易 学士，85/100' },
+        { k: '教育', v: '杜伦大学 社会学硕士，成绩优秀 · 南通大学 国际经济与贸易 学士，85/100' },
         { k: '方法', v: '结构方程模型 · 中介分析 · 计算文本分析 · 网络分析 · 调查设计 · 评测设计' },
         { k: '工具', v: 'Python、R、C++、SQL、Git 等' },
         { k: '语言', v: '中文（母语）· 英文（流利，杜伦英文授课硕士）' },
@@ -171,7 +164,7 @@ export const content = {
       linksTitle: '其他',
       links: [
         { label: 'ORCID', value: '0009-0002-6340-2325', href: ORCID_URL },
-        { label: '领英', value: 'huipeng-gong', href: LINKEDIN_URL },
+        { label: '领英', value: 'linkedin.com/in/huipeng-gong', href: LINKEDIN_URL },
       ],
       formTitle: '或者在这里留一句',
       form: {
@@ -187,6 +180,7 @@ export const content = {
     },
     a11y: {
       avatarAlt: '拱慧鹏的卡通形象',
+      photoAlt: '拱慧鹏的照片',
       switchLang: '切换到英文',
       skip: '跳到正文',
       mainNav: '主导航',
@@ -198,11 +192,11 @@ export const content = {
     sections: SECTIONS.en,
     hero: {
       eyebrow: 'AI APPLICATION DEVELOPMENT ENGINEER · HUAWEI · SHANGHAI',
-      name: 'Huipeng Gong',
+      name: 'Huipeng (Andy) Gong',
       nameEn: '',
-      nameAlt: 'Andy Kong',
+      nameAlt: '',
       cta: 'Get in touch',
-      lead: 'Agent orchestration, retrieval, data pipelines — then the half I care about more: evaluation sets, baselines, refusal. When a system says "I don\'t know", is it actually uncertain? That part is measurable.',
+      lead: 'I build AI systems, then test them with social-science methods: is the evaluation credible, does the measure capture what it claims to, does the conclusion rest on evidence? Pipelines and agents on one side; text analysis and structural equation models on the other.',
       hint: 'Move your cursor to make me look · hover my head or hands · drag to spin me',
     },
     about: {
@@ -212,7 +206,7 @@ export const content = {
         {
           k: '01',
           title: 'Build',
-          text: 'Agent orchestration (ReAct loops, tool use), retrieval-augmented generation with hybrid search and re-ranking, data pipelines and local deployment. Models wired into systems that run, not left in a notebook.',
+          text: 'Data collection and pipelines, retrieval, agents and local deployment. Models wired into systems that run, not left in a notebook.',
         },
         {
           k: '02',
@@ -225,19 +219,12 @@ export const content = {
           text: 'Structural equation modelling, mediation tests, agreement between model output and manual coding. First ask what a number measures, then what it means.',
         },
       ],
-      bio: 'BSc in international trade, MSc in sociology (computational), then engineering. The order looks accidental; the combination is not — I can build the pipeline and design the measurement that makes its output credible. By day I work on AI application components and human–AI interaction evaluation at Huawei; in my own time I build small tools.',
+      bio: 'BSc in international trade, MSc in sociology, then engineering. The order looks accidental; the combination is not — I can build the pipeline and design the measurement that makes its output credible. By day I work on AI application components and human–AI interaction evaluation at Huawei; in my own time I build small tools.',
     },
     work: {
       title: 'Selected work',
       intro: 'Things that run — not proposals.',
       items: [
-        {
-          year: '2026',
-          name: 'PhD position tracker',
-          meta: 'Personal tooling · runs at 09:00 daily',
-          desc: 'Scrapes open doctoral positions across 20+ European institutions, filtered by a rule engine of hard exclusion criteria with a 12-case regression suite; shortlisted posts are then re-checked on the detail page, because listing teasers run to a few dozen characters while the requirements that actually disqualify you sit further down. Over three weeks: 1,119 positions narrowed to 44.',
-          tags: ['Node.js', 'Rule engine', 'Regression tests'],
-        },
         {
           year: '2025',
           name: 'Droppulses',
@@ -302,7 +289,7 @@ export const content = {
         { k: 'Now', v: 'Huawei · AI Application Development Engineer (Oct 2025 – present)' },
         {
           k: 'Education',
-          v: 'MSc Sociology (computational), Durham — Merit · BSc International Economics and Trade, Nantong University — 85/100',
+          v: 'MSc Sociology, Durham — Merit · BSc International Economics and Trade, Nantong University — 85/100',
         },
         {
           k: 'Methods',
@@ -319,7 +306,7 @@ export const content = {
       linksTitle: 'Elsewhere',
       links: [
         { label: 'ORCID', value: '0009-0002-6340-2325', href: ORCID_URL },
-        { label: 'LinkedIn', value: 'in/huipeng-gong', href: LINKEDIN_URL },
+        { label: 'LinkedIn', value: 'linkedin.com/in/huipeng-gong', href: LINKEDIN_URL },
       ],
       formTitle: 'Or leave a line here',
       form: {
@@ -335,6 +322,7 @@ export const content = {
     },
     a11y: {
       avatarAlt: 'Cartoon avatar of Huipeng Gong',
+      photoAlt: 'Photo of Huipeng Gong',
       switchLang: '切换到中文',
       skip: 'Skip to content',
       mainNav: 'Main',
