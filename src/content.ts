@@ -60,6 +60,7 @@ export const content = {
       name: '拱慧鹏',
       nameEn: 'Huipeng Gong',
       nameAlt: '',
+      cta: '联系我',
       lead: '智能体编排、检索、数据管线，然后是更在意的那一半：评测集、基线对照、拒答。一个系统说"不知道"的时候，它是不是真的不知道——这件事可以测。',
       hint: '移动鼠标我会看你 · 悬停头部或手试试 · 按住可拖动',
     },
@@ -84,6 +85,7 @@ export const content = {
         },
       ],
       bio: '本科读国际贸易，硕士转社会学（计算方向），毕业后做工程。顺序看着像绕路，凑成的东西不多见：能写爬虫和管线，也知道怎么设计一个可信的测量。现在白天在华为做人工智能应用组件和人机交互评测，业余自己搭小工具。',
+      photoAlt: '拱慧鹏的照片',
     },
     work: {
       title: '做过的',
@@ -200,6 +202,7 @@ export const content = {
       name: 'Huipeng Gong',
       nameEn: '',
       nameAlt: 'Andy Kong',
+      cta: 'Get in touch',
       lead: 'Agent orchestration, retrieval, data pipelines — then the half I care about more: evaluation sets, baselines, refusal. When a system says "I don\'t know", is it actually uncertain? That part is measurable.',
       hint: 'Move your cursor to make me look · hover my head or hands · drag to spin me',
     },
@@ -224,6 +227,7 @@ export const content = {
         },
       ],
       bio: 'BSc in international trade, MSc in sociology (computational), then engineering. The order looks accidental; the combination is not — I can build the pipeline and design the measurement that makes its output credible. By day I work on AI application components and human–AI interaction evaluation at Huawei; in my own time I build small tools.',
+      photoAlt: 'Portrait of Huipeng Gong',
     },
     work: {
       title: 'Selected work',

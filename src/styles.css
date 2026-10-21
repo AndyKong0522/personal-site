@@ -13,10 +13,12 @@
 }
 
 :root {
+  --page: #e4dfd3; /* 卡片外面的底色，比卡片深一点，卡片才浮得起来 */
   --bg: #f2efe8; /* 暖白纸 */
   --bg-2: #e9e5db;
   --card: #f8f6f1;
   --fg: #1b1917; /* 墨色，在 --bg 上对比度约 15:1 */
+  --ink: #16233c; /* 标题和主按钮用的深蓝黑 */
   --muted: #5f594f; /* 在 --bg 上对比度约 5.8:1 */
   --line: rgba(27, 25, 23, 0.14);
   --shadow: rgba(27, 25, 23, 0.08);
@@ -51,12 +53,23 @@ html.lenis body {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--page);
   color: var(--fg);
   font-family: var(--font-body);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+/* 整站是一张浮起来的卡片：外面一圈深色底，圆角 + 阴影 */
+.shell {
+  width: min(100% - 2rem, calc(var(--max) + 7rem));
+  margin: 1rem auto 2rem;
+  background: var(--bg);
+  border-radius: 26px;
+  box-shadow: 0 24px 70px rgba(27, 25, 23, 0.1), 0 1px 3px rgba(27, 25, 23, 0.05);
+  /* clip 而不是 hidden：hidden 会让 sticky 的表头失效 */
+  overflow: clip;
 }
 
 /* 纸感颗粒：纯 SVG 噪点，不请求任何图片 */
@@ -97,40 +110,43 @@ a {
 
 /* ---------- 顶部 ---------- */
 .site-header {
-  position: fixed;
-  inset: 0 0 auto 0;
+  position: sticky;
+  top: 0;
   z-index: 50;
   display: flex;
   align-items: center;
   gap: 1.1rem;
-  /* 左右内边距跟着内容宽度走：屏幕再宽，导航也和下面各段对齐，不会贴到屏幕边 */
-  padding: 1.1rem max(var(--pad-x), calc((100% - var(--max)) / 2));
-  /* 顶部渐隐，滚动时文字不会和内容撞在一起 */
-  background: linear-gradient(var(--bg) 58%, transparent);
+  padding: 0.9rem max(var(--pad-x), calc((100% - var(--max)) / 2));
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
 }
 .wordmark {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.3rem;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1.08rem;
+  letter-spacing: -0.015em;
   text-decoration: none;
+  color: var(--ink);
 }
 .site-header nav {
   display: flex;
-  gap: 1.4rem;
-  margin: 0 auto 0 0.8rem;
+  gap: 1.5rem;
+  margin-left: auto;
 }
 .site-header nav a {
   position: relative;
-  font-size: 0.8rem;
-  color: var(--muted);
+  font-size: 0.71rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink);
   text-decoration: none;
-  padding-bottom: 0.3rem;
+  padding-bottom: 0.25rem;
+  opacity: 0.72;
+  transition: opacity 0.2s ease;
 }
 .site-header nav a:hover,
 .site-header nav a.is-active {
-  color: var(--fg);
+  opacity: 1;
 }
 .site-header nav a.is-active::after {
   content: '';
@@ -138,8 +154,25 @@ a {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 1px;
-  background: var(--fg);
+  height: 1.5px;
+  background: var(--ink);
+}
+/* 顶栏那个填色按钮：参考站也是右上角一个 "LET'S TALK" */
+.nav-cta {
+  flex: none;
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: 7px;
+  padding: 0.52rem 0.95rem;
+  font-size: 0.71rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+.nav-cta:hover {
+  background: #000;
 }
 .lang-toggle {
   border: 1px solid var(--line);
@@ -158,7 +191,8 @@ a {
 /* ---------- 首页 ---------- */
 .hero {
   position: relative;
-  min-height: 100svh;
+  /* 卡片从顶部缩进 1rem、表头约 3.5rem，所以首屏要矮一点，鞋底才不会被折线切掉 */
+  min-height: calc(100svh - 6.5rem);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -180,8 +214,8 @@ a {
 }
 .avatar-fallback {
   /* 静图宽 = 画布宽 × 0.72、静图高 = 画布高 × 0.91：比例错的话 3D 淡入时画面会跳一下 */
-  width: min(40vw, 460px);
-  max-height: 82svh;
+  width: min(34.5vw, 460px);
+  max-height: min(76.4svh, 710px);
   object-fit: contain;
   transition: opacity 0.6s ease;
 }
@@ -248,7 +282,7 @@ a {
 
 .avatar-canvas {
   width: min(48vw, 640px);
-  height: min(90svh, 810px);
+  height: min(84svh, 780px);
   opacity: 0;
   transition: opacity 0.6s ease;
   /* 只有画布这一块吃指针事件，人物周边和页面其余部分照常滚动/点击。
@@ -392,12 +426,14 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.6rem 1.05rem;
-  border: 1px solid var(--fg);
-  border-radius: 999px;
+  padding: 0.62rem 1.1rem;
+  border: 1px solid var(--ink);
+  border-radius: 7px;
   font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
@@ -408,26 +444,31 @@ a {
   font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.04em;
+  text-transform: none;
   opacity: 0.6;
 }
 .btn-outline {
   background: transparent;
-  color: var(--fg);
+  color: var(--ink);
 }
 .btn-outline:hover {
-  background: var(--fg);
+  background: var(--ink);
   color: var(--bg);
 }
 .btn-solid {
-  background: var(--fg);
+  background: var(--ink);
   color: var(--bg);
 }
 .btn-solid:hover {
   background: #000;
 }
 .btn:focus-visible {
-  outline: 2px solid var(--fg);
+  outline: 2px solid var(--ink);
   outline-offset: 3px;
+}
+/* 首屏那个"联系我"：和参考站一样，摆在简介下面 */
+.hero-cta {
+  margin-top: 1.6rem;
 }
 /* "在线查看完整简历"：次一级的文字链，不做成第二个按钮 */
 .btn-link {
@@ -487,12 +528,12 @@ a {
 }
 .section-rail h2 {
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(1.5rem, 2.7vw, 2.15rem);
-  line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.005em;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 .rail-note {
   margin: 0;
@@ -574,6 +615,24 @@ a {
   margin: 0;
   font-size: 1.02rem;
 }
+/* 简介：左边真人照片（黑白），右边文字 */
+.about-top {
+  display: grid;
+  grid-template-columns: minmax(0, 250px) minmax(0, 1fr);
+  gap: clamp(1.4rem, 3vw, 2.8rem);
+  align-items: start;
+}
+.about-photo {
+  margin: 0;
+}
+.about-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: #fff;
+  filter: grayscale(1) contrast(1.03);
+}
 .about-note {
   color: var(--muted);
   font-size: 0.86rem;
@@ -603,10 +662,15 @@ a {
   padding-top: 0;
 }
 .row-year {
-  padding-top: 0.3rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  color: var(--muted);
+  justify-self: start;
+  align-self: start;
+  padding: 0.2rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(22, 35, 60, 0.07);
+  color: var(--ink);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 .row-main {
   display: grid;
@@ -743,20 +807,22 @@ a {
 /* 联系 */
 .contact-big {
   margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(1.35rem, 3.4vw, 2.4rem);
-  line-height: 1.1;
-  letter-spacing: 0.01em;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: clamp(1.3rem, 3vw, 2.2rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--ink);
   word-break: break-word;
 }
 .contact-big a {
+  color: inherit;
   text-decoration: none;
-  box-shadow: inset 0 -2px 0 var(--fg);
+  box-shadow: inset 0 -2px 0 currentColor;
   transition: background 0.2s ease, color 0.2s ease;
 }
 .contact-big a:hover {
-  background: var(--fg);
+  background: var(--ink);
   color: var(--bg);
   box-shadow: none;
 }
@@ -902,11 +968,22 @@ a {
 
 /* ---------- 窄屏 ---------- */
 @media (max-width: 900px) {
+  /* 手机上卡片贴边，圆角收小 */
+  .shell {
+    width: 100%;
+    margin: 0 0 0.8rem;
+    border-radius: 18px;
+  }
   .site-header nav {
     display: none;
   }
-  .lang-toggle {
+  .nav-cta {
     margin-left: auto;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.66rem;
+  }
+  .lang-toggle {
+    margin-left: 0;
   }
   .hero {
     min-height: auto;
@@ -966,6 +1043,14 @@ a {
   }
   .pillars {
     grid-template-columns: 1fr;
+  }
+  /* 简介：照片和文字上下排，照片裁短一点 */
+  .about-top {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  .about-photo {
+    max-width: 190px;
   }
   .pillar {
     padding: 1.3rem 1.15rem;

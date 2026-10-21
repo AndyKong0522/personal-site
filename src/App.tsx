@@ -262,6 +262,8 @@ export default function App() {
         {t.a11y.skip}
       </a>
 
+      {/* 整站是一张浮起来的卡片，表头 sticky 在卡片顶部 */}
+      <div className="shell">
       <header className="site-header">
         <a className="wordmark" href="#top">
           {t.wordmark}
@@ -273,6 +275,9 @@ export default function App() {
             </a>
           ))}
         </nav>
+        <a className="nav-cta" href="#contact">
+          {t.hero.cta}
+        </a>
         <button
           className="lang-toggle"
           type="button"
@@ -331,6 +336,9 @@ export default function App() {
                 ))}
               </p>
               <p className="hero-lead">{t.hero.lead}</p>
+              <a className="btn btn-solid hero-cta" href="#contact">
+                {t.hero.cta}
+              </a>
             </div>
 
             <div className="hero-right">
@@ -365,6 +373,22 @@ export default function App() {
             <p className="rail-note">{t.about.eyebrow}</p>
           </header>
           <div className="section-body">
+            <div className="about-top">
+              <figure className="about-photo reveal">
+                <img
+                  src="/portrait.webp"
+                  alt={t.about.photoAlt}
+                  width={900}
+                  height={1125}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <div className="about-bio reveal">
+                <p>{t.about.bio}</p>
+              </div>
+            </div>
+
             <div className="pillars">
               {t.about.pillars.map((p) => (
                 <article key={p.title} className="pillar reveal">
@@ -373,9 +397,6 @@ export default function App() {
                   <p>{p.text}</p>
                 </article>
               ))}
-            </div>
-            <div className="about-bio reveal">
-              <p>{t.about.bio}</p>
             </div>
           </div>
         </section>
@@ -504,6 +525,7 @@ export default function App() {
         </span>
         <a href="#top">{lang === 'zh' ? '回到顶部 ↑' : 'Back to top ↑'}</a>
       </footer>
+      </div>
 
       {/* 左下角分段指示 + 底部进度条 */}
       <div className="hud-index" aria-hidden="true">
