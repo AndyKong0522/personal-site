@@ -38,20 +38,24 @@ const MAX_DPR = Math.min(typeof window === 'undefined' ? 1 : window.devicePixelR
     dpr 属性盖回去，实测降下去又被拽回上限。 */
 const LEVELS = [
   { dpr: 1, shadows: false }, // 0 最省：低分屏 + 无阴影
-  { dpr: 1.25, shadows: false }, // 1
-  { dpr: Math.min(1.5, MAX_DPR), shadows: false }, // 2 接近满分辨率
-  { dpr: MAX_DPR, shadows: true }, // 3 全开：分辨率满 + 主光自身阴影
+  { dpr: Math.min(1.25, MAX_DPR), shadows: false }, // 1
+  { dpr: Math.min(1.5, MAX_DPR), shadows: false }, // 2
+  { dpr: MAX_DPR, shadows: false }, // 3 满分辨率、不开阴影
+  { dpr: MAX_DPR, shadows: true }, // 4 全开：分辨率满 + 主光自身阴影
 ] as const
 
-/** 起始档按显卡型号定（见 capabilities.gpuTier）。手机一律不开阴影：省电，也不容易掉帧。 */
+/** 起始档按显卡型号定（见 capabilities.gpuTier）。
+    2026-10-21 实测：原来手机起步 1.25 倍，在 3 倍屏上只画了 42% 的边长再拉伸（本人反馈"像素差、不清晰"）。
+    现在除了软件渲染，一律从满分辨率起步；真跑不动由 AdaptiveQuality 往下退。
+    手机不开阴影：阴影只多一点下巴/腋下暗部，代价是多一遍深度渲染。 */
 function initialLevel(): number {
   const mobile =
     typeof window !== 'undefined' &&
     (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 720)
   const tier = gpuTier()
   if (tier === 'slow') return 0
-  if (mobile) return tier === 'fast' ? 2 : 1
-  return tier === 'fast' ? 3 : 2
+  if (mobile) return 3
+  return tier === 'fast' ? 4 : 3
 }
 
 /** 灯光强度：半球环境光（压得很低，主要靠环境立方图和主光塑形）、主光（右前上）、补光（左前）、轮廓光（后上） */
@@ -353,6 +357,12 @@ const _qb = new THREE.Quaternion()
 const _qc = new THREE.Quaternion()
 const _v = new THREE.Vector3()
 const _v2 = new THREE.Vector3()
+// poseArm 专用（drive 内部会用 _qa/_qc，不能共用）
+const _armFull = new THREE.Quaternion()
+const _armIdle = new THREE.Quaternion()
+const _armBend = new THREE.Quaternion()
+const _foreNow = new THREE.Vector3()
+const _foreTarget = new THREE.Vector3()
 
 /** yaw（绕模型 Y）× pitch（绕模型 X，正值=低头）组成的模型空间旋转 */
 function yawPitch(out: THREE.Quaternion, yaw: number, pitch: number) {
@@ -748,10 +758,11 @@ function poseArm(o: {
   const body = parentDeltaOf(o.shoulder ?? o.arm)
 
   // 上臂：绑定姿势的指向 → 目标指向（最小旋转，不依赖骨骼局部轴）
+  // 全部用模块级临时对象：每帧 new 十个四元数/向量会让垃圾回收周期性卡一下（微卡顿）
   const upperRest = _v.copy(fo.pos).sub(ar.pos).normalize()
   const upperTarget = _v2.copy(WAVE_UPPER).setX(WAVE_UPPER.x * o.side)
-  const full = new THREE.Quaternion().setFromUnitVectors(upperRest, upperTarget)
-  const idleQ = new THREE.Quaternion().setFromAxisAngle(AZ, o.idle)
+  const full = _armFull.setFromUnitVectors(upperRest, upperTarget)
+  const idleQ = _armIdle.setFromAxisAngle(AZ, o.idle)
 
   // 肩骨分担一部分抬升，减轻腋下网格被拉扯
   if (o.shoulder) drive(o.shoulder, o.rest, o.dShoulder.copy(body).multiply(_qb.copy(ID).slerp(full, SHOULDER_SHARE * o.w)))
@@ -759,11 +770,11 @@ function poseArm(o: {
 
   // 前臂：上臂转完后它的指向 → 竖直向上，再绕"朝镜头"的轴左右摆
   if (!hn) return
-  const foreNow = new THREE.Vector3().copy(hn.pos).sub(fo.pos).normalize().applyQuaternion(o.dArm)
-  const foreTarget = new THREE.Vector3()
+  const foreNow = _foreNow.copy(hn.pos).sub(fo.pos).normalize().applyQuaternion(o.dArm)
+  const foreTarget = _foreTarget
     .copy(WAVE_FORE)
     .setX(WAVE_FORE.x * o.side)
     .applyAxisAngle(AZ, -o.swing * o.side)
-  const bend = new THREE.Quaternion().setFromUnitVectors(foreNow, foreTarget)
+  const bend = _armBend.setFromUnitVectors(foreNow, foreTarget)
   drive(o.fore, o.rest, o.dFore.copy(ID).slerp(bend, o.w).multiply(o.dArm))
 }
