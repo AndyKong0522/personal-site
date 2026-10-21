@@ -85,7 +85,6 @@ export const content = {
         },
       ],
       bio: '本科读国际贸易，硕士转社会学（计算方向），毕业后做工程。顺序看着像绕路，凑成的东西不多见：能写爬虫和管线，也知道怎么设计一个可信的测量。现在白天在华为做人工智能应用组件和人机交互评测，业余自己搭小工具。',
-      photoAlt: '拱慧鹏的照片',
     },
     work: {
       title: '做过的',
@@ -227,7 +226,6 @@ export const content = {
         },
       ],
       bio: 'BSc in international trade, MSc in sociology (computational), then engineering. The order looks accidental; the combination is not — I can build the pipeline and design the measurement that makes its output credible. By day I work on AI application components and human–AI interaction evaluation at Huawei; in my own time I build small tools.',
-      photoAlt: 'Portrait of Huipeng Gong',
     },
     work: {
       title: 'Selected work',

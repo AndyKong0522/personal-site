@@ -373,22 +373,6 @@ export default function App() {
             <p className="rail-note">{t.about.eyebrow}</p>
           </header>
           <div className="section-body">
-            <div className="about-top">
-              <figure className="about-photo reveal">
-                <img
-                  src="/portrait.webp"
-                  alt={t.about.photoAlt}
-                  width={900}
-                  height={1125}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </figure>
-              <div className="about-bio reveal">
-                <p>{t.about.bio}</p>
-              </div>
-            </div>
-
             <div className="pillars">
               {t.about.pillars.map((p) => (
                 <article key={p.title} className="pillar reveal">
@@ -397,6 +381,9 @@ export default function App() {
                   <p>{p.text}</p>
                 </article>
               ))}
+            </div>
+            <div className="about-bio reveal">
+              <p>{t.about.bio}</p>
             </div>
           </div>
         </section>

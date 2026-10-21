@@ -615,23 +615,6 @@ a {
   margin: 0;
   font-size: 1.02rem;
 }
-/* 简介：左边真人照片（黑白），右边文字 */
-.about-top {
-  display: grid;
-  grid-template-columns: minmax(0, 250px) minmax(0, 1fr);
-  gap: clamp(1.4rem, 3vw, 2.8rem);
-  align-items: start;
-}
-.about-photo {
-  margin: 0;
-}
-.about-photo img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-  background: var(--card);
-}
 .about-note {
   color: var(--muted);
   font-size: 0.86rem;
@@ -1042,14 +1025,6 @@ a {
   }
   .pillars {
     grid-template-columns: 1fr;
-  }
-  /* 简介：照片和文字上下排，照片裁短一点 */
-  .about-top {
-    grid-template-columns: 1fr;
-    gap: 1.2rem;
-  }
-  .about-photo {
-    max-width: 190px;
   }
   .pillar {
     padding: 1.3rem 1.15rem;
