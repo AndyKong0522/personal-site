@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 're
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
-import { content, CV_PATH, DISPLAY_LINES, EMAIL, type Lang } from './content'
+import { content, CV_PATH, DISPLAY_LINES, EMAIL, type Content, type Lang } from './content'
 import { hero3DMode, prefersReducedMotion, remember3D, type Hero3DMode } from './capabilities'
 // 调试角标只在 ?stats=1 时才加载，不占首屏体积
 const StatsOverlay = lazy(() => import('./StatsOverlay'))
@@ -16,6 +16,95 @@ function initialLang(): Lang {
   const saved = localStorage.getItem('lang')
   if (saved === 'zh' || saved === 'en') return saved
   return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en'
+}
+
+/**
+ * 留言表单。没有后端密钥时也能用：
+ * 先 POST 到 /api/contact（Cloudflare Pages Function），拿到 404/501 或网络失败就退回
+ * 打开邮件客户端并把内容填好——不会出现"点了发送什么也没发生"。
+ */
+function ContactForm({ c, lang }: { c: Content['contact']; lang: Lang }) {
+  const [status, setStatus] = useState<'idle' | 'sending' | 'ok' | 'fallback' | 'failed'>('idle')
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const mailtoFor = (name: string, from: string, message: string) => {
+    const subject = lang === 'zh' ? `来自个人网站的留言 · ${name}` : `Message from your website · ${name}`
+    const body = `${message}\n\n— ${name} (${from})`
+    return `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (status === 'sending') return
+    const form = formRef.current
+    if (!form) return
+    const data = new FormData(form)
+    const name = String(data.get('name') ?? '').trim()
+    const from = String(data.get('email') ?? '').trim()
+    const message = String(data.get('message') ?? '').trim()
+    if (!name || !from || !message) {
+      form.reportValidity()
+      return
+    }
+    setStatus('sending')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, email: from, message }),
+      })
+      // 只有拿到明确的 JSON {ok:true} 才算成功。
+      // 静态托管会把未知路径兜底成首页（200 + HTML），那种情况必须当成没配后端。
+      const type = res.headers.get('content-type') ?? ''
+      const body = type.includes('application/json') ? await res.json().catch(() => null) : null
+      if (res.ok && body?.ok === true) {
+        form.reset()
+        setStatus('ok')
+        return
+      }
+      if (res.status === 404 || res.status === 501 || body?.error === 'not-configured' || !body) {
+        window.location.href = mailtoFor(name, from, message)
+        setStatus('fallback')
+        return
+      }
+      setStatus('failed')
+    } catch {
+      window.location.href = mailtoFor(name, from, message)
+      setStatus('fallback')
+    }
+  }
+
+  return (
+    <form ref={formRef} className="contact-form" onSubmit={onSubmit}>
+      <div className="field">
+        <label htmlFor="cf-name">{c.form.name}</label>
+        <input id="cf-name" name="name" type="text" required maxLength={80} autoComplete="name" />
+      </div>
+      <div className="field">
+        <label htmlFor="cf-email">{c.form.email}</label>
+        <input id="cf-email" name="email" type="email" required maxLength={120} autoComplete="email" />
+      </div>
+      <div className="field field-wide">
+        <label htmlFor="cf-message">{c.form.message}</label>
+        <textarea id="cf-message" name="message" rows={5} required maxLength={2000} />
+      </div>
+      <div className="form-actions">
+        <button className="btn btn-solid" type="submit" disabled={status === 'sending'}>
+          {status === 'sending' ? c.form.sending : c.form.submit}
+        </button>
+        <p className="form-status" role="status" aria-live="polite">
+          {status === 'ok' && c.form.ok}
+          {status === 'fallback' && c.form.fallback}
+          {status === 'failed' && (
+            <>
+              {c.form.failed}{' '}
+              <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+            </>
+          )}
+        </p>
+      </div>
+    </form>
+  )
 }
 
 export default function App() {
@@ -387,13 +476,24 @@ export default function App() {
             <p className="contact-big reveal">
               <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
             </p>
-            <dl className="contact-list reveal">
-              <dt>{t.contact.linksTitle}</dt>
-              <dd className="pending">
-                {t.contact.linksPending}
-                <span className="pending-note">{lang === 'zh' ? '待补充' : 'to be added'}</span>
-              </dd>
+            <dl className="contact-links reveal">
+              {t.contact.links.map((l) => (
+                <div key={l.label}>
+                  <dt>{l.label}</dt>
+                  <dd>
+                    <a href={l.href} target="_blank" rel="noopener noreferrer me">
+                      {l.value}
+                      <span aria-hidden="true"> ↗</span>
+                    </a>
+                  </dd>
+                </div>
+              ))}
             </dl>
+
+            <div className="contact-form-wrap reveal">
+              <h3 className="micro-title">{t.contact.formTitle}</h3>
+              <ContactForm c={t.contact} lang={lang} />
+            </div>
           </div>
         </section>
       </main>

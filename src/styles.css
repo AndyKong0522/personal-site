@@ -25,7 +25,9 @@
   --font-cjk-display: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Source Han Sans SC', 'Hiragino Sans GB', sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --pad-x: clamp(1.25rem, 4vw, 3.5rem);
-  --max: 1120px;
+  /* 内容宽度随屏宽连续增长：1440 → 1120，2560 → 1720，再宽封顶 1900。
+     比一堆断点稳，任何分辨率都不会突然跳一档。 */
+  --max: clamp(1120px, 53.6vw + 349px, 1900px);
   color-scheme: light;
 }
 
@@ -35,6 +37,9 @@
 
 html {
   scroll-behavior: smooth;
+  /* 根字号跟着屏宽连续涨：1440 → 16px、1920 → 17.5、2560 → 19.5、4K 封顶 22。
+     所有尺寸都是 rem，根字号一涨整页按比例放大，比例不变。 */
+  font-size: clamp(16px, 0.3125vw + 11.5px, 22px);
 }
 html.lenis,
 html.lenis body {
@@ -755,33 +760,97 @@ a {
   color: var(--bg);
   box-shadow: none;
 }
-.contact-list {
+/* 联系：邮箱 + 学术/职业主页 + 留言表单 */
+.contact-links {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.9rem;
   margin: 0;
 }
-.contact-list dt {
+.contact-links > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: baseline;
+}
+.contact-links dt {
   font-size: 0.68rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.contact-list dd {
+.contact-links dd {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.98rem;
 }
-.pending {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+.contact-links a {
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.1rem;
+  word-break: break-all;
+}
+.contact-links a:hover {
+  border-color: var(--fg);
+}
+
+.contact-form-wrap {
+  display: grid;
+  gap: 1.1rem;
+  max-width: 42rem;
+}
+.contact-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1.1rem;
+}
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+.field-wide {
+  grid-column: 1 / -1;
+}
+.field label {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted);
 }
-.pending-note {
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  border: 1px dashed var(--line);
-  border-radius: 999px;
-  padding: 0.1rem 0.55rem;
+.field input,
+.field textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+  resize: vertical;
+}
+.field input:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+  border-color: var(--fg);
+}
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1rem;
+}
+.form-actions .btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+.form-status {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.form-status a {
+  color: var(--fg);
 }
 
 .site-footer {
@@ -916,53 +985,37 @@ a {
     grid-template-columns: 1fr;
     gap: 0.25rem;
   }
+  /* 联系：标签和值改成上下两行，表单改单列 */
+  .contact-links > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  .contact-form {
+    grid-template-columns: 1fr;
+  }
   .hud-index {
     display: none;
   }
 }
 
 /* ---------- 大屏 ----------
-   内容宽度写死在 1120px、字号又都是 16px 起的 rem，27 寸（2560 宽）打开就像缩略图。
-   两档一起放大：整页 rem 全部按比例涨（留白跟着涨，比例不变），容器和头像的上限同时放开。 */
-@media (min-width: 1600px) {
-  html {
-    font-size: 17.5px;
-  }
-  :root {
-    --max: 1360px;
-  }
+   内容宽度和根字号已经是连续函数（见 :root 和 html），这里只处理两件不能自动跟的事：
+   ① 人像是像素尺寸，要单独跟着屏宽涨（静图 = 画布 × 0.72 宽、× 0.91 高，这组比例调过）
+   ② 首屏那三个字要跟着涨，否则被放大的人像压没了 */
+@media (min-width: 1500px) {
   .avatar-canvas {
-    width: min(44vw, 740px);
-    height: min(86svh, 900px);
-  }
-  /* 静图 = 画布 × 0.72 宽、× 0.91 高，这组比例是调好的，改画布必须同步改这里 */
-  .avatar-fallback {
-    width: min(31.7vw, 533px);
-    max-height: min(78.3svh, 819px);
-  }
-}
-
-@media (min-width: 2100px) {
-  html {
-    font-size: 19.5px;
-  }
-  :root {
-    --max: 1720px;
-  }
-  .avatar-canvas {
-    width: min(42vw, 880px);
-    height: min(84svh, 1010px);
+    width: clamp(640px, 21.4vw + 330px, 1000px);
+    height: min(90svh, clamp(810px, 27.1vw + 418px, 1266px));
   }
   .avatar-fallback {
-    width: min(30.2vw, 634px);
-    max-height: min(76.4svh, 919px);
+    width: clamp(461px, 15.4vw + 238px, 720px);
+    max-height: min(82svh, clamp(737px, 24.7vw + 380px, 1152px));
   }
-  /* 屏越大，首屏那三个字越要撑得住，否则旁边的人像把它压没了 */
   .display {
-    font-size: clamp(2.4rem, 3.2vw, 5rem);
+    font-size: clamp(2.4rem, 3vw, 5.4rem);
   }
   .display.is-cjk {
-    font-size: clamp(2.8rem, 3.8vw, 5.6rem);
+    font-size: clamp(2.8rem, 3.5vw, 6rem);
   }
   .hero-lead {
     max-width: 30rem;

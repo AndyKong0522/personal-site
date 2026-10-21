@@ -28,7 +28,7 @@
 # 拦掉它只会让控制台报错、拿不到访问数据，所以显式放行。
 # 不想要统计的话，去 Cloudflare 控制台 Web Analytics 里关掉，然后把下面两个域名删掉即可。
 /*
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; font-src 'self'; connect-src 'self' blob: https://cloudflareinsights.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com; font-src 'self'; connect-src 'self' blob: https://cloudflareinsights.com; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY

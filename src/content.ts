@@ -43,6 +43,11 @@ const SECTIONS: Record<Lang, SectionMeta[]> = {
 
 export const EMAIL = 'andykong.work@outlook.com'
 
+/** 学术身份与职业主页（2026-10-20 本人提供）。GitHub 暂不放。 */
+export const ORCID = '0009-0002-6340-2325'
+export const ORCID_URL = 'https://orcid.org/0009-0002-6340-2325'
+export const LINKEDIN_URL = 'https://www.linkedin.com/in/huipeng-gong'
+
 /** 简历文件放在 public/cv/cv-en.pdf，内容见 data/work/cv-public-en.html（导出源）。 */
 export const CV_PATH = '/cv/cv-en.pdf'
 
@@ -163,7 +168,21 @@ export const content = {
       intro: '岗位、博士项目、合作，都可以直接发邮件。',
       emailLabel: '邮箱',
       linksTitle: '其他',
-      linksPending: '领英 · GitHub',
+      links: [
+        { label: 'ORCID', value: '0009-0002-6340-2325', href: ORCID_URL },
+        { label: '领英', value: 'huipeng-gong', href: LINKEDIN_URL },
+      ],
+      formTitle: '或者在这里留一句',
+      form: {
+        name: '称呼',
+        email: '你的邮箱',
+        message: '想说的',
+        submit: '发送',
+        sending: '发送中…',
+        ok: '收到了，谢谢。我会尽快回。',
+        fallback: '已经帮你打开邮件客户端，内容都填好了——点一下发送就行。',
+        failed: '没发出去。直接发邮件给我也一样：',
+      },
     },
     a11y: {
       avatarAlt: '拱慧鹏的卡通形象',
@@ -296,7 +315,21 @@ export const content = {
       intro: 'Roles, PhD projects, collaborations — email is fine.',
       emailLabel: 'Email',
       linksTitle: 'Elsewhere',
-      linksPending: 'LinkedIn · GitHub',
+      links: [
+        { label: 'ORCID', value: '0009-0002-6340-2325', href: ORCID_URL },
+        { label: 'LinkedIn', value: 'in/huipeng-gong', href: LINKEDIN_URL },
+      ],
+      formTitle: 'Or leave a line here',
+      form: {
+        name: 'Your name',
+        email: 'Your email',
+        message: 'Message',
+        submit: 'Send',
+        sending: 'Sending…',
+        ok: 'Got it — thank you. I will reply soon.',
+        fallback: 'I opened your mail app with the message filled in — just hit send.',
+        failed: 'That did not go through. Email works just as well:',
+      },
     },
     a11y: {
       avatarAlt: 'Cartoon avatar of Huipeng Gong',
