@@ -1,0 +1,12 @@
+name = "personal-site-api"
+main = "index.js"
+compatibility_date = "2026-10-19"
+
+# 只接管这一个主机下的 /api/*，其余路径完全不碰（站点仍然由 personal-site 那个 Worker 服务）
+routes = [
+  { pattern = "gonghuipeng.com/api/*", zone_name = "gonghuipeng.com" }
+]
+
+[vars]
+CONTACT_TO = "andykong.work@outlook.com"
+CONTACT_FROM = "site@gonghuipeng.com"
