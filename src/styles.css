@@ -98,7 +98,8 @@ a {
   display: flex;
   align-items: center;
   gap: 1.1rem;
-  padding: 1.1rem var(--pad-x);
+  /* 左右内边距跟着内容宽度走：屏幕再宽，导航也和下面各段对齐，不会贴到屏幕边 */
+  padding: 1.1rem max(var(--pad-x), calc((100% - var(--max)) / 2));
   /* 顶部渐隐，滚动时文字不会和内容撞在一起 */
   background: linear-gradient(var(--bg) 58%, transparent);
 }
@@ -264,7 +265,7 @@ a {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 2rem;
-  padding: 6.5rem var(--pad-x) 1rem;
+  padding: 6.5rem max(var(--pad-x), calc((100% - var(--max)) / 2)) 1rem;
   /* 文字层默认不接指针事件（否则会吃掉头像的悬停和拖动），
      只把真正可点的元素重新打开。 */
   pointer-events: none;
@@ -917,6 +918,54 @@ a {
   }
   .hud-index {
     display: none;
+  }
+}
+
+/* ---------- 大屏 ----------
+   内容宽度写死在 1120px、字号又都是 16px 起的 rem，27 寸（2560 宽）打开就像缩略图。
+   两档一起放大：整页 rem 全部按比例涨（留白跟着涨，比例不变），容器和头像的上限同时放开。 */
+@media (min-width: 1600px) {
+  html {
+    font-size: 17.5px;
+  }
+  :root {
+    --max: 1360px;
+  }
+  .avatar-canvas {
+    width: min(44vw, 740px);
+    height: min(86svh, 900px);
+  }
+  /* 静图 = 画布 × 0.72 宽、× 0.91 高，这组比例是调好的，改画布必须同步改这里 */
+  .avatar-fallback {
+    width: min(31.7vw, 533px);
+    max-height: min(78.3svh, 819px);
+  }
+}
+
+@media (min-width: 2100px) {
+  html {
+    font-size: 19.5px;
+  }
+  :root {
+    --max: 1720px;
+  }
+  .avatar-canvas {
+    width: min(42vw, 880px);
+    height: min(84svh, 1010px);
+  }
+  .avatar-fallback {
+    width: min(30.2vw, 634px);
+    max-height: min(76.4svh, 919px);
+  }
+  /* 屏越大，首屏那三个字越要撑得住，否则旁边的人像把它压没了 */
+  .display {
+    font-size: clamp(2.4rem, 3.2vw, 5rem);
+  }
+  .display.is-cjk {
+    font-size: clamp(2.8rem, 3.8vw, 5.6rem);
+  }
+  .hero-lead {
+    max-width: 30rem;
   }
 }
 

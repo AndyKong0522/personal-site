@@ -287,12 +287,6 @@ export default function App() {
             </div>
             <div className="about-bio reveal">
               <p>{t.about.bio}</p>
-              <p className="about-note">
-                {t.about.note}{' '}
-                <a href={CV_PATH} download>
-                  {t.cv.downloadLabel}
-                </a>
-              </p>
             </div>
           </div>
         </section>
@@ -364,7 +358,6 @@ export default function App() {
               <div className="cv-download">
                 <a className="btn btn-solid" href={CV_PATH} download>
                   {t.cv.downloadLabel}
-                  <span className="btn-note">{t.cv.downloadMeta}</span>
                 </a>
                 <a className="btn-link" href={CV_PATH} target="_blank" rel="noopener noreferrer">
                   {t.cv.viewLabel}

@@ -79,7 +79,6 @@ export const content = {
         },
       ],
       bio: '本科读国际贸易，硕士转社会学（计算方向），毕业后做工程。顺序看着像绕路，凑成的东西不多见：能写爬虫和管线，也知道怎么设计一个可信的测量。现在白天在华为做人工智能应用组件和人机交互评测，业余自己搭小工具。',
-      note: '想细看的话，完整版在这里：',
     },
     work: {
       title: '做过的',
@@ -147,9 +146,8 @@ export const content = {
     },
     cv: {
       title: '简历',
-      intro: '一页，英文。和这个页面同源：上面写过的这里都有，这里没有的不会多说。',
+      intro: '和这个页面同源：上面写过的这里都有，这里没有的不会多说。',
       downloadLabel: '下载简历',
-      downloadMeta: '一页 · 约 110 千字节',
       viewLabel: '在线查看完整简历',
       factsTitle: '速览',
       facts: [
@@ -207,7 +205,6 @@ export const content = {
         },
       ],
       bio: 'BSc in international trade, MSc in sociology (computational), then engineering. The order looks accidental; the combination is not — I can build the pipeline and design the measurement that makes its output credible. By day I work on AI application components and human–AI interaction evaluation at Huawei; in my own time I build small tools.',
-      note: 'The full version is here:',
     },
     work: {
       title: 'Selected work',
@@ -276,10 +273,8 @@ export const content = {
     },
     cv: {
       title: 'CV',
-      intro:
-        'One page, English. Same source as this page: everything here is in it, and it adds nothing that is not here.',
+      intro: 'Same source as this page: everything here is in it, and it adds nothing that is not here.',
       downloadLabel: 'Download CV (PDF)',
-      downloadMeta: 'one page · ~110 KB',
       viewLabel: 'Read the full CV online',
       factsTitle: 'At a glance',
       facts: [
