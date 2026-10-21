@@ -244,9 +244,9 @@ a {
    只在慢网/没点过的访客身上出现；点过一次会存进 localStorage，之后自动加载。 */
 .avatar-cta {
   position: absolute;
-  /* 浮在人像身上（像视频播放键）：放在深色长裤那一段，白底胶囊才看得清，
+  /* 浮在人像身上（像视频播放键）：落在深色长裤那一段，白底胶囊才看得清，
      压在白鞋上会糊成一片。 */
-  bottom: 12%;
+  bottom: 30%;
   left: 50%;
   transform: translateX(-50%);
   display: inline-flex;
