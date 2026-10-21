@@ -53,7 +53,7 @@ export const CV_PATH = '/cv/cv-en.pdf'
 
 export const content = {
   zh: {
-    wordmark: '慧鹏.',
+    wordmark: 'Andy.',
     sections: SECTIONS.zh,
     hero: {
       eyebrow: '人工智能应用开发工程师 · 华为 · 上海',
@@ -151,7 +151,7 @@ export const content = {
       factsTitle: '速览',
       facts: [
         { k: '现在', v: '华为 · 人工智能应用开发工程师（2025.10 至今）' },
-        { k: '教育', v: '杜伦大学 社会学硕士，成绩优秀 · 南通大学 国际经济与贸易 学士，85/100' },
+        { k: '教育', v: '杜伦大学 社会学硕士 · 南通大学 国际经济与贸易 学士' },
         { k: '方法', v: '结构方程模型 · 中介分析 · 计算文本分析 · 网络分析 · 调查设计 · 评测设计' },
         { k: '工具', v: 'Python、R、C++、SQL、Git 等' },
         { k: '语言', v: '中文（母语）· 英文（流利，杜伦英文授课硕士）' },
@@ -188,7 +188,7 @@ export const content = {
   },
 
   en: {
-    wordmark: 'Huipeng.',
+    wordmark: 'Andy.',
     sections: SECTIONS.en,
     hero: {
       eyebrow: 'AI APPLICATION DEVELOPMENT ENGINEER · HUAWEI · SHANGHAI',
@@ -289,7 +289,7 @@ export const content = {
         { k: 'Now', v: 'Huawei · AI Application Development Engineer (Oct 2025 – present)' },
         {
           k: 'Education',
-          v: 'MSc Sociology, Durham — Merit · BSc International Economics and Trade, Nantong University — 85/100',
+          v: 'MSc Sociology, Durham University · BSc International Economics and Trade, Nantong University',
         },
         {
           k: 'Methods',
