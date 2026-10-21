@@ -1017,8 +1017,9 @@ a {
   .display.is-cjk {
     font-size: clamp(2.8rem, 3.5vw, 6rem);
   }
+  /* 大屏上人像会变宽，正文要收窄，否则末行会顶到袖子 */
   .hero-lead {
-    max-width: 30rem;
+    max-width: 22rem;
   }
 }
 
