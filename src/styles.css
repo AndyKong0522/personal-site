@@ -356,8 +356,9 @@ a {
 .display.is-cjk {
   font-family: var(--font-cjk-display);
   font-weight: 800;
-  font-size: clamp(2.3rem, 5vw, 4.2rem);
-  line-height: 1.16;
+  /* 两行：知其然 / 知其所以然，第二行五个字，字号收一点免得碰到人像 */
+  font-size: clamp(2.1rem, 3.9vw, 3.6rem);
+  line-height: 1.22;
   letter-spacing: 0.02em;
   text-transform: none;
 }
@@ -1112,7 +1113,7 @@ a {
     font-size: clamp(2.4rem, 3vw, 5.4rem);
   }
   .display.is-cjk {
-    font-size: clamp(2.8rem, 3.5vw, 6rem);
+    font-size: clamp(2.6rem, 2.9vw, 5rem);
   }
   /* 大屏上人像会变宽，正文要收窄，否则末行会顶到袖子 */
   .hero-lead {
