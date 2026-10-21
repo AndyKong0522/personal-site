@@ -1007,14 +1007,16 @@ a {
     order: 2;
     position: relative;
     inset: auto;
-    height: 54svh;
+    /* 高度写死：之前画布是 height:100% 指向一个自适应高度的格子，实际画得比容器高，鞋子被切掉 */
+    height: min(78svh, 660px);
   }
   .avatar-canvas {
-    width: min(80vw, 420px);
-    height: 100%;
+    width: 100%;
+    height: min(78svh, 660px);
   }
   .avatar-fallback {
-    width: min(66vw, 350px);
+    width: auto;
+    max-height: min(71svh, 600px);
   }
   .hero-right {
     justify-self: start;

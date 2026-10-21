@@ -216,7 +216,10 @@ export default function App() {
     gsap.ticker.add(tick)
     gsap.ticker.lagSmoothing(0)
 
-    const ctx = gsap.context(() => {
+    // 首屏淡出只在宽屏做：手机上人像排在文字下面，要往下滚才看得到，
+    // 一滚就开始淡出会让人像在屏幕正中时只剩六成不透明度（"灰蒙蒙"）。
+    const mm = gsap.matchMedia()
+    mm.add('(min-width: 901px)', () => {
       // 首屏：人像和两列文字随滚动淡出、错位（人像走得比文字快一点）
       gsap.to('.hero-stage', {
         yPercent: -14,
@@ -236,6 +239,9 @@ export default function App() {
         ease: 'none',
         scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
       })
+    })
+
+    const ctx = gsap.context(() => {
       // 各分段进入视口时淡入。左侧栏不参与（sticky 元素上挂 transform 会让它抖）。
       gsap.utils.toArray<HTMLElement>('.reveal').forEach((el) => {
         gsap.from(el, {
@@ -250,6 +256,7 @@ export default function App() {
 
     return () => {
       window.removeEventListener('scroll', onScroll)
+      mm.revert()
       ctx.revert()
       gsap.ticker.remove(tick)
       lenis.destroy()
