@@ -12,10 +12,37 @@ gsap.registerPlugin(ScrollTrigger)
 // three.js 体积大，单独拆包，首屏不阻塞。
 const AvatarScene = lazy(() => import('./three/AvatarScene'))
 
+/**
+ * 默认语言：中国大陆 IP → 中文，其余 → 英文；访客手动切过就永远听他的。
+ * IP 要问一次 /api/geo，为了不闪屏，先用时区猜（大陆时区几乎只有大陆用户），
+ * 拿到 IP 结果后再校正，并缓存到本次会话。
+ */
+const LANG_KEY = 'lang-choice' // 只在手动切换时写入；旧的 'lang' 是自动写的，不再当作选择
+const GEO_KEY = 'geo-lang'
+const CN_ZONES = ['Asia/Shanghai', 'Asia/Chongqing', 'Asia/Chungking', 'Asia/Harbin', 'Asia/Urumqi', 'PRC']
+
+function savedChoice(): Lang | null {
+  try {
+    const v = localStorage.getItem(LANG_KEY)
+    return v === 'zh' || v === 'en' ? v : null
+  } catch {
+    return null
+  }
+}
+
 function initialLang(): Lang {
-  const saved = localStorage.getItem('lang')
-  if (saved === 'zh' || saved === 'en') return saved
-  return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en'
+  const param = new URLSearchParams(location.search).get('lang')
+  if (param === 'zh' || param === 'en') return param
+  const saved = savedChoice()
+  if (saved) return saved
+  try {
+    const geo = sessionStorage.getItem(GEO_KEY)
+    if (geo === 'zh' || geo === 'en') return geo
+  } catch {
+    /* 隐私模式 */
+  }
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? ''
+  return CN_ZONES.includes(tz) ? 'zh' : 'en'
 }
 
 /**
@@ -129,8 +156,37 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
-    localStorage.setItem('lang', lang)
   }, [lang])
+
+  // 用 IP 校正默认语言（手动选过、URL 指定过、或本会话已查过就跳过）
+  useEffect(() => {
+    if (new URLSearchParams(location.search).has('lang') || savedChoice()) return
+    try {
+      if (sessionStorage.getItem(GEO_KEY)) return
+    } catch {
+      /* 隐私模式 */
+    }
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 3000)
+    fetch('/api/geo', { signal: ctrl.signal })
+      .then((r) => (r.headers.get('content-type')?.includes('json') ? r.json() : null))
+      .then((d: { country?: string | null } | null) => {
+        if (!d || !d.country || d.country === 'XX' || d.country === 'T1') return
+        const geoLang: Lang = d.country === 'CN' ? 'zh' : 'en'
+        try {
+          sessionStorage.setItem(GEO_KEY, geoLang)
+        } catch {
+          /* 隐私模式 */
+        }
+        if (!savedChoice()) setLang(geoLang)
+      })
+      .catch(() => {})
+      .finally(() => clearTimeout(timer))
+    return () => {
+      clearTimeout(timer)
+      ctrl.abort()
+    }
+  }, [])
 
   // 首屏策略在 hero3DMode() 里决定；auto 模式下 use3D 初值就是 true，
   // 第一帧就挂 Canvas，让代码包和模型尽早开始下载（两者都已在 index.html 预载）。
@@ -288,7 +344,15 @@ export default function App() {
         <button
           className="lang-toggle"
           type="button"
-          onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+          onClick={() => {
+            const next: Lang = lang === 'zh' ? 'en' : 'zh'
+            try {
+              localStorage.setItem(LANG_KEY, next)
+            } catch {
+              /* 隐私模式：本次有效即可 */
+            }
+            setLang(next)
+          }}
           aria-label={t.a11y.switchLang}
         >
           {lang === 'zh' ? 'EN' : '中'}

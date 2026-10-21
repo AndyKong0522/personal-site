@@ -70,6 +70,8 @@ export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url)
     if (pathname === '/api/contact') return handleContact(request, env)
+    // 前端据此选默认语言：中国大陆 IP → 中文，其余 → 英文。只回国家代码，不记录任何东西。
+    if (pathname === '/api/geo') return json({ country: request.cf?.country ?? null }, 200)
     return json({ ok: false, error: 'not-found' }, 404)
   },
 }
