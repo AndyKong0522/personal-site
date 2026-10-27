@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
@@ -400,7 +400,18 @@ export default function App() {
 
           <div className="hero-inner">
             <div className="hero-left">
-              <p className="eyebrow">{t.hero.eyebrow}</p>
+              {/* 每段不拆行，点跟着前一段走：换行只会落在「·」后面，不会出现「· SHANGHAI」这种孤行 */}
+              <p className="eyebrow">
+                {t.hero.eyebrow.split(' · ').map((part, i, all) => (
+                  <Fragment key={part}>
+                    <span className="eyebrow-part">
+                      {part}
+                      {i < all.length - 1 ? '\u00a0·' : ''}
+                    </span>
+                    {i < all.length - 1 ? ' ' : ''}
+                  </Fragment>
+                ))}
+              </p>
               <p className={`display${lang === 'zh' ? ' is-cjk' : ''}`}>
                 {DISPLAY_LINES[lang].map((line) => (
                   <span key={line}>{line}</span>

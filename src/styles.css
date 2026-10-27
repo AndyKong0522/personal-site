@@ -329,10 +329,16 @@ a {
 
 .eyebrow {
   margin: 0 0 1.1rem;
+  /* 首屏这一行（职位 · 公司 · 城市）英文很长，不收宽会一直伸到人像头上 */
+  max-width: 24rem;
+  text-wrap: balance;
   font-size: 0.68rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--muted);
+}
+.eyebrow-part {
+  white-space: nowrap;
 }
 /* 展示字：造 / 量 / 证（中文）/ BUILD · MEASURE · PROVE（英文）。
    上面压一条细线，行距放开，别让三行撞在一起。 */
@@ -999,7 +1005,8 @@ a {
   /* 手机上：文字在前、头像在后。stage 在 DOM 里排第一，用 order 往后挪。 */
   .hero-inner {
     order: 1;
-    grid-template-columns: 1fr;
+    /* minmax(0,…)：不让任何不换行的内容把整列撑出屏幕（320 宽实测过被撑开、正文被裁） */
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.6rem;
     padding: 1rem var(--pad-x) 1.5rem;
   }
@@ -1036,6 +1043,10 @@ a {
   }
   .mouse-hint {
     display: none;
+  }
+  /* 手机上整行都是文字的地盘，正常换行即可 */
+  .eyebrow-part {
+    white-space: normal;
   }
   /* 分段改成单列，左侧栏不再粘住 */
   .section {
