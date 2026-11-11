@@ -158,7 +158,6 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, pa
         // R3F 默认 ACES 会把肤色、夹克的中间调压灰压暗；Neutral 更忠实于贴图（贴图按 2D 设计图取色）
         gl.toneMapping = THREE.NeutralToneMapping
         if (DEBUG_BG) gl.setClearColor(new THREE.Color(DEBUG_BG), 1)
-        onReady?.()
       }}
       aria-hidden="true"
     >
@@ -188,9 +187,37 @@ export default function AvatarScene({ scrollProgress, pointer, reducedMotion, pa
         <Rig scrollProgress={scrollProgress} reducedMotion={reducedMotion} drag={drag}>
           <GltfAvatar url={MODEL.url} reducedMotion={reducedMotion} pointer={pointer} drag={drag} />
         </Rig>
+        {/* onReady 必须等模型真的画到屏幕上再触发：之前挂在 Canvas 的 onCreated 上，
+            WebGL 一建好就通知外层把静图藏了，而模型还要几秒才下完 ——
+            慢网手机上人像位置会空一大块（实测 6s 藏图、10.4s 模型才到）。 */}
+        <ReadySignal onReady={onReady} />
       </Suspense>
     </Canvas>
   )
+}
+
+/** 模型进场景后再画两帧才通知外层：第一帧还在编译着色器/上传贴图，
+    这时候切过去仍可能闪一下空白。
+    frameloop 是 demand（省电/减少动态效果/人像不在视口）时不会自己出帧，
+    所以要主动 invalidate，否则这个信号永远等不到。 */
+function ReadySignal({ onReady }: { onReady?: () => void }) {
+  const { invalidate } = useThree()
+  const st = useRef(0)
+  const done = useRef(false)
+  useEffect(() => {
+    invalidate()
+  }, [invalidate])
+  useFrame(() => {
+    if (done.current) return
+    st.current++
+    if (st.current < 3) {
+      invalidate()
+      return
+    }
+    done.current = true
+    onReady?.()
+  })
+  return null
 }
 
 /** 画质兜底：只**降**不升。

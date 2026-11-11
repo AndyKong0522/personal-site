@@ -39,11 +39,17 @@ export type Hero3DMode = 'auto' | 'offer' | 'none'
     （猜错的代价是一个点击，或者稍微慢一点），绝不拿它决定"不加载"。 */
 export function hero3DMode(): Hero3DMode {
   if (!canRender3D() || slowNetwork()) return 'none'
+  let remembered = false
   try {
-    if (localStorage.getItem('avatar-3d') === '1') return 'auto'
+    remembered = localStorage.getItem('avatar-3d') === '1'
   } catch {
     /* 隐私模式下 localStorage 会抛异常，当作没点过 */
   }
+  // 手机/平板（窄屏）默认只给静图：3D 要下 2.2 MB（模型 1.2 + three 包 1 MB），
+  // 在手机流量上就是"转半天"，而且先到的静图会被藏掉、人像位置空一块。
+  // 点过"让我动起来"的访客照旧自动加载。
+  if (window.matchMedia('(max-width: 900px)').matches) return remembered ? 'auto' : 'offer'
+  if (remembered) return 'auto'
   const connection = (
     navigator as Navigator & { connection?: { rtt?: number; downlink?: number } }
   ).connection

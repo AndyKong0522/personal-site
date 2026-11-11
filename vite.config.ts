@@ -12,6 +12,8 @@ const preloadScript = (model: string, scene: string) =>
   `(function(){try{var n=navigator,c=n.connection||{},q=location.search;` +
   `if(/[?&]static\\b/.test(q))return;` +
   `if(!/[?&]force3d\\b/.test(q)){` +
+  // 窄屏默认只给静图（见 src/capabilities.ts 的 hero3DMode），不该预载 2.2 MB 的 3D
+  `if(window.innerWidth<=900)return;` +
   `if(c.saveData||c.effectiveType==='slow-2g')return;` +
   `if(n.deviceMemory!==undefined&&n.deviceMemory<4)return;` +
   `if(n.hardwareConcurrency!==undefined&&n.hardwareConcurrency<4)return;` +

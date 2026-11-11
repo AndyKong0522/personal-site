@@ -92,7 +92,7 @@ export const content = {
       intro: '能跑起来的，不是设想。',
       items: [
         {
-          year: '2025',
+          year: '2026',
           name: 'Droppulses',
           meta: '独立开发 · 生成式人工智能与多智能体',
           desc: '一套由生成式人工智能与多智能体自主执行任务的系统，自建接口把大模型服务接进真实的商业平台，完成本地模型部署与生产环境集成；同步记录交互日志，观察人工智能中介的交流如何影响用户决策。',
@@ -227,7 +227,7 @@ export const content = {
       intro: 'Things that run — not proposals.',
       items: [
         {
-          year: '2025',
+          year: '2026',
           name: 'Droppulses',
           meta: 'Independent build · generative and multi-agent AI',
           desc: 'A system in which generative and multi-agent AI performs tasks autonomously: custom APIs integrate LLM services into live commercial platforms, with local model deployment and production integration. Interaction logs are captured to study how AI-mediated exchange shapes user decisions.',
