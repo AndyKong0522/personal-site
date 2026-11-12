@@ -186,6 +186,7 @@ export const content = {
       skip: '跳到正文',
       mainNav: '主导航',
     },
+    privacy: '本站记录访问日志（IP、地区、来源），只用于了解访客构成。',
   },
 
   en: {
@@ -328,6 +329,7 @@ export const content = {
       skip: 'Skip to content',
       mainNav: 'Main',
     },
+    privacy: 'This site keeps a visit log (IP, region, referrer) only to understand its audience.',
   },
 } as const
 

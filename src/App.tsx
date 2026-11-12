@@ -158,6 +158,22 @@ export default function App() {
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
   }, [lang])
 
+  // 记一条访问日志（Worker 里存 IP、地区、运营商、来源），用来知道站被谁看过。
+  // 失败完全不影响页面；?nolog 可以跳过（自己调试时不留下记录）。
+  useEffect(() => {
+    if (new URLSearchParams(location.search).has('nolog')) return
+    fetch('/api/hit', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        path: location.pathname + location.search,
+        ref: document.referrer || null,
+        lang: document.documentElement.lang,
+      }),
+      keepalive: true,
+    }).catch(() => {})
+  }, [])
+
   // 用 IP 校正默认语言（手动选过、URL 指定过、或本会话已查过就跳过）
   useEffect(() => {
     if (new URLSearchParams(location.search).has('lang') || savedChoice()) return
@@ -605,6 +621,7 @@ export default function App() {
         <span>
           © {new Date().getFullYear()} {t.wordmark}
         </span>
+        <p className="footer-note">{t.privacy}</p>
         <a href="#top">{lang === 'zh' ? '回到顶部 ↑' : 'Back to top ↑'}</a>
       </footer>
       </div>

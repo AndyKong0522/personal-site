@@ -950,6 +950,24 @@ a {
 .site-footer a:hover {
   color: var(--fg);
 }
+/* 页脚中间那行隐私说明：小一号、居中，窄屏时换行到第二行 */
+.footer-note {
+  margin: 0;
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+@media (max-width: 640px) {
+  .site-footer {
+    flex-wrap: wrap;
+  }
+  .footer-note {
+    order: 3;
+    flex-basis: 100%;
+    text-align: left;
+  }
+}
 
 /* ---------- 左下角分段指示 + 底部进度条 ---------- */
 .hud-index {

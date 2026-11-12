@@ -10,3 +10,9 @@ routes = [
 [vars]
 CONTACT_TO = "andykong.work@outlook.com"
 CONTACT_FROM = "site@gonghuipeng.com"
+
+# 访客记录（只有 /api/hit 写、/api/visits 读）。免费版 Cloudflare 不保留 HTTP 访问日志，
+# 所以只能自己在 Worker 里记。
+[[kv_namespaces]]
+binding = "HITS"
+id = "ab78f57d42b44475b44f86d610f2675e"

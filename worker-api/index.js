@@ -21,6 +21,92 @@ const json = (body, status) =>
 
 const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)
 
+/**
+ * 访客记录。免费版 Cloudflare 不保存 HTTP 访问日志，Zone Analytics 只有总量、没有 IP，
+ * 所以页面打一个 beacon 过来，由这里把 IP / 地区 / 运营商 / 来源存进 KV，90 天自动过期。
+ * 读取需要 ?key=<VISITS_KEY>，比对的是 wrangler secret 里的值。
+ */
+function clientIp(request) {
+  // cf-connecting-ip 由 Cloudflare 写入，访客伪造不了
+  return request.headers.get('cf-connecting-ip') ?? ''
+}
+
+/** 只留前两段：49.71.x.x */
+const maskIp = (ip) => {
+  if (!ip) return ''
+  const v4 = ip.split('.')
+  if (v4.length === 4) return `${v4[0]}.${v4[1]}.x.x`
+  return ip.split(':').slice(0, 2).join(':') + '::x'
+}
+
+const BOT_RE = /bot|crawler|spider|curl|wget|python-requests|headless|monitor|preview|slurp|facebookexternalhit|whatsapp|telegram|googlebot|bingpreview/i
+
+async function handleHit(request, env) {
+  if (request.method !== 'POST' && request.method !== 'GET') {
+    return json({ ok: false, error: 'method-not-allowed' }, 405)
+  }
+  if (!env?.HITS) return json({ ok: false, error: 'not-configured' }, 501)
+
+  let body = {}
+  try {
+    body = (await request.json()) ?? {}
+  } catch {
+    /* 没带 body 也记一条，至少留下地区和 IP */
+  }
+
+  const cf = request.cf ?? {}
+  const ip = clientIp(request)
+  const ua = (request.headers.get('user-agent') ?? '').slice(0, 220)
+  const at = new Date().toISOString()
+
+  const entry = {
+    at,
+    ip,
+    ipMasked: maskIp(ip),
+    country: cf.country ?? null,
+    region: cf.region ?? null,
+    city: cf.city ?? null,
+    asn: cf.asn ?? null,
+    isp: cf.asOrganization ?? null,
+    page: String(body?.path ?? '').slice(0, 300) || null,
+    lang: String(body?.lang ?? '').slice(0, 12) || null,
+    ref: String(body?.ref ?? '').slice(0, 300) || null,
+    ua,
+    bot: BOT_RE.test(ua),
+  }
+
+  await env.HITS.put(`hit:${at}:${crypto.randomUUID().slice(0, 8)}`, JSON.stringify(entry), {
+    expirationTtl: 90 * 24 * 3600,
+  })
+
+  return json({ ok: true }, 200)
+}
+
+async function handleVisits(request, env) {
+  if (!env?.VISITS_KEY || !env?.HITS) return json({ ok: false, error: 'not-configured' }, 501)
+  const url = new URL(request.url)
+  if (url.searchParams.get('key') !== env.VISITS_KEY) return json({ ok: false, error: 'forbidden' }, 403)
+
+  const limit = Math.min(Number(url.searchParams.get('limit') ?? 300) || 300, 1000)
+  const list = await env.HITS.list({ prefix: 'hit:', limit, reverse: true })
+  const values = await Promise.all(list.keys.map((k) => env.HITS.get(k.name, 'json')))
+  const all = values.filter(Boolean)
+  const keepBots = url.searchParams.get('bots') === '1'
+  const rows = keepBots ? all : all.filter((h) => !h.bot)
+
+  const byDay = {}
+  const byPlace = {}
+  for (const h of rows) {
+    const d = h.at.slice(0, 10)
+    byDay[d] = (byDay[d] ?? 0) + 1
+    const p = [h.country, h.city].filter(Boolean).join(' · ') || '未知'
+    byPlace[p] = (byPlace[p] ?? 0) + 1
+  }
+
+  return json({ ok: true, count: rows.length, botsSkipped: all.length - rows.length, byDay, byPlace, hits: rows }, 200)
+}
+
+
 async function handleContact(request, env) {
   if (request.method !== 'POST') return json({ ok: false, error: 'method-not-allowed' }, 405)
 
@@ -72,6 +158,8 @@ export default {
     if (pathname === '/api/contact') return handleContact(request, env)
     // 前端据此选默认语言：中国大陆 IP → 中文，其余 → 英文。只回国家代码，不记录任何东西。
     if (pathname === '/api/geo') return json({ country: request.cf?.country ?? null }, 200)
+    if (pathname === '/api/hit') return handleHit(request, env)
+    if (pathname === '/api/visits') return handleVisits(request, env)
     return json({ ok: false, error: 'not-found' }, 404)
   },
 }
